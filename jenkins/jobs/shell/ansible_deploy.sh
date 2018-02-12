@@ -1,0 +1,1 @@
+ansible-playbook -i $ANSIBLE_INVENTORY -u $ANSIBLE_USER -e "$ANSIBLE_EXTRA_VARS" -l "$ANSIBLE_LIMITS" -t "$ANSIBLE_TAGS" play.yml
