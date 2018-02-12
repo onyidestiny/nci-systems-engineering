@@ -1,0 +1,86 @@
+---
+ - name: ncl dev deployment
+   hosts: ncl-dev
+   become: yes
+   become_user: drupal
+   become_method: dzdo
+   vars:
+
+     - nclroot: /local/drupal/ncl/sites/default
+     - drupalroot: /local/drupal/ncl
+     - dbfile: ncl-dev-db
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy:  ncl-site-dev-copy
+     - svnurl: https://ncisvn.nci.nih.gov/svn/ncldrupal
+     - svn_root: /local/drupal/svn_source/ncldrupal/ncldrupal
+     - backups: /local/drupal/backups
+     - tier: dev
+     - rsynchost: nciws-d712-v
+     - drupaluser: drupal
+     - rsyncsrc: /local/drupal/svn_source/ncldrupal/ncldrupal/trunk
+
+
+   tasks:
+     - name: Take sql dump of dev database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ nclroot }}"
+
+     - name: Backup ncl site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Checkout svn
+       subversion:
+         repo: "{{ svnurl }}"
+         dest: "{{ svn_root }}"
+         username: donkorvn
+         
+  
+     - name: rsync the sites directory
+       synchronize:
+         src: "{{ rsyncsrc }}/sites/"
+         dest: "{{ drupalroot }}/sites/"
+         recursive: yes
+         perms: no
+       delegate_to: "{{ rsynchost }}"
+
+     - name: Change ownership of ncl site
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Find type  directory in all and change permission to 755
+       shell:
+         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ nclroot }}"
+
+     - name: Find type  file in themes and change permission to 644
+       shell:
+         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ nclroot }}"
+
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ nclroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ nclroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ nclroot }}"
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ nclroot }}"
+     

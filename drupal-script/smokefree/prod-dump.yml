@@ -1,0 +1,38 @@
+---
+ - name: Smokefree Production  database dump
+   hosts: nciws-p652-v
+   become: yes
+   become_user: drupal
+   become_method: dzdo 
+   vars:
+     - sfgroot: /local/drupal/smokefree/sites/smokefree.gov
+     - proddump: /admfs/drupal_deployment/smokefree
+     - prodsqlfile:  smokefree-prod-db.sql
+     - drupalroot: /local/drupal/smokefree
+     - prodsite:  sites.tar
+
+   tasks:
+     - name: Take sql dump of production file.
+       shell: 
+         cmd: drush sql-dump --skip-tables-list=domain --result-file={{ proddump }}/{{ prodsqlfile }}
+         chdir: "{{ sfgroot }}"
+
+#     - name: Take copy of production files systems
+#       shell: 
+#         cmd: tar -cf {{ proddump }}/{{ prodsite }} --exclude=sites/smokefree/settings.php sites
+#         chdir: "{{ drupalroot }}"
+
+
+ 
+
+
+
+
+
+
+
+
+
+   
+
+     

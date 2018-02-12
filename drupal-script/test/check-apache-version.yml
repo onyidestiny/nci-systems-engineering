@@ -1,0 +1,11 @@
+---
+- name: Register output of a command
+  hosts: nci-dev
+  tasks:
+    - name: Check expose config 
+      shell: rpm -q cbiit-apache2.4
+      register: cbiitapache
+
+    - debug: msg="{{ cbiitapache.stdout }}"
+
+      

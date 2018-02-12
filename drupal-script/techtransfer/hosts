@@ -1,0 +1,13 @@
+[ttc-dev]
+nciws-d408-v 
+
+[ttc-qa]
+nciws-q470-v
+
+[ttc-stage]
+nciws-s409-v
+
+[ttc-prod]
+nciws-p410-v
+
+			

@@ -1,0 +1,98 @@
+---
+ - name: "{{ tier }} deployment"
+   hosts: '{{ hosts }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+      
+     - hosts: '{{ hosts }}' 
+     - site: cssi
+     - tier: '{{ tier }}'
+     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - drupalroot: /local/drupal/cssi
+     - dbfile: "{{ site }}-{{ tier }}-db"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy: "{{ site }}-site-{{ tier }}-copy"
+     - giturl: https://github.com/CBIIT/nci-cssi
+     - gitroot: /local/drupal/gitsource/nci-cssi
+     - backups: /local/drupal/backups
+     - drupaluser: drupal
+
+
+   tasks:
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ siteroot }}"
+
+     - name: Backup {{ site }} directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Sanitize the local git directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Checkout git repo
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+  
+     - name: rsync the sites directory
+       shell:
+         cmd: rsync -rvcCi {{ gitroot }}/  {{ drupalroot }}/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: Change ownership of {{ site }} site.
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+         
+     - name: Find type  directory in all and change permission to 755
+       shell:
+         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in themes and change permission to 644
+       shell:
+         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ siteroot }}"
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+
+
+
+
+
+
+
+
+
+   
+
+     

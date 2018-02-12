@@ -1,0 +1,119 @@
+---
+ - name: Provocativequestions prod deployment
+   hosts: pq-prod
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+
+     - pqroot: /local/drupal/pq/sites/pq
+     - drupalroot: /local/drupal/pq
+     - dbfile: pq-prod-db
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy:  pq-site-prod-copy
+     - giturl: https://nciscmbot:'5enguinPwr!'@github.com/CBIIT/nci-provocativequestions
+     - gitroot: /local/drupal/gitsource/nci-provocativequestions
+     - backups: /local/drupal/backups
+     - tier: prod
+     - rsynchost: nciws-p814-v
+     - drupaluser: drupal
+
+
+   tasks:
+     - name: Take sql dump of prod database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ pqroot }}"
+
+     - name: Backup pq site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Remove the old gitsource directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Clone the git repo
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+  
+     - name: rsync the sites directory
+       synchronize:
+         src: "{{ gitroot }}/sites/"
+         dest: "{{ drupalroot }}/sites/"
+         recursive: yes
+         perms: no
+       delegate_to: "{{ rsynchost }}"
+
+     - name: Change ownership of Provocativequestions site.
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Find type  directory in libraries and change permission to 755
+       shell:
+         cmd: find libraries -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  file in libraries and change permission to 644
+       shell:
+         cmd: find libraries -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  directory in modules and change permission to 755
+       shell:
+         cmd: find modules -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  file in modules and change permission to 644
+       shell:
+         cmd: find modules -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ pqroot }}"
+         
+     - name: Find type  directory in themes and change permission to 755
+       shell:
+         cmd: find themes -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  file in themes and change permission to 644
+       shell:
+         cmd: find themes -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ pqroot }}"
+
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ pqroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ pqroot }}"
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ pqroot }}"
+
+
+
+
+
+
+
+
+
+   
+
+     

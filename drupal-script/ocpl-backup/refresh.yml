@@ -1,0 +1,26 @@
+---
+- name: backup files and database to {{ sitename }}
+  hosts: '{{ fhost }}'
+  become: yes
+  become_user: root
+  become_method: dzdo
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  
+  roles:
+   - { role: backup-files, when: refresh == "files" }
+   - { role: backup-db, when: refresh == "database" } 
+   - { role: backup-db-files, when: refresh == "files and database" }
+
+- name: Applying backups
+  hosts: '{{ thost }}'
+  become: yes
+  become_user: root
+  become_method: dzdo
+  gather_facts: no
+  roles:
+   - { role: extract-files, when: refresh == "files" }
+   - { role: drop-database, when: refresh == "database" }
+   - { role: import-database, when: refresh == "database" }
+   - { role: full-backup, when: backup == "files and database" }

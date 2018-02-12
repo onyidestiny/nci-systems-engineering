@@ -1,0 +1,14 @@
+---
+# tasks file for full-refresh
+- include_vars: ../../vars.yml
+
+- name: Take sql dump of {{ tier }} database.
+  shell: 
+    cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+    chdir: "{{ siteroot }}"
+  register: dump
+- debug: msg={{ dump }}
+
+- name: Drop {{ sitename }} {{ tier }} database
+  shell: 
+    cmd: cd {{ siteroot }} && drush sql-drop -y

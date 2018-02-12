@@ -1,0 +1,130 @@
+---
+ - include: prod-db-dump.yml
+   when: hosts != "nciws-p864-v"
+
+ - name: Springboard deployment
+   hosts: '{{ hosts }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+
+     - hosts: '{{ hosts }}'
+     - site: springboard
+     - tier: '{{ tier }}'
+     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - drupalroot: /local/drupal/{{ site }}
+     - dbfile: "{{ site }}-{{ tier }}-db"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy: "{{ site }}-site-{{ tier }}-copy"
+     - giturl: https://github.com/CBIIT/springboard.git
+     - gitroot: /local/drupal/gitsource/{{ site }}
+     - database_location: /admfs/drupal_deployment/springboard
+     - files_location: /admfs/drupal_deployment/springboard/files
+     - backups: /local/drupal/backups
+     - dblocation: /admfs/drupal_deployment/{{ site }}
+     - prodsqlfile:  "{{ site }}-prod-db.sql"
+     - deploydb: '{{ deploydb }}'
+     - drupaluser: drupal
+
+
+   tasks:
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ siteroot }}"
+
+     - name: Backup site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Sanitize the local svn repo directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Checkout git repo
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       register: gitout
+     - debug: msg={{ gitout }} 
+  
+     - name: rsync the sites directory
+       shell:
+         cmd: rsync -rvcCi  {{ gitroot }}/sites/all/  {{ siteroot }}/../all/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: rsync the sites directory
+       shell:
+         cmd: rsync -rvcCi  --exclude=settings.php {{ gitroot }}/sites/default/  {{ siteroot }}/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+
+     - name: rsync the files directory
+       shell:
+         cmd: rsync -rvcCi  {{ files_location }}/  {{ siteroot }}/files/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+
+     - name: Change ownership of {{ site }} site
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Find type  directory in all and change permission to 755
+       shell:
+         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in themes and change permission to 644
+       shell:
+         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ siteroot }}"
+
+     - name: Import the production database
+       shell: 
+         cmd:  drush sql-cli < {{ dblocation }}/{{ prodsqlfile }}
+         chdir: "{{ siteroot }}"
+       when: 
+         - deploydb  == "Yes"
+         - hosts != "nciws-p864-v"
+
+     - name: Import the new database  
+       shell: 
+         cmd:  drush sql-cli < {{ database_location }}/springboard-database-update.sql
+         chdir: "{{ siteroot }}"
+       when: deploydb  == "Yes"
+
+     - name: Enable nci_SSO module
+       shell:
+         cmd: drush en nci_SSO -y
+         chdir: "{{ siteroot }}"
+         
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+     

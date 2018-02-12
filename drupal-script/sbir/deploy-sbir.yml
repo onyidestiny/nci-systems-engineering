@@ -1,0 +1,98 @@
+---
+ - name: sbir deployment
+   hosts: '{{ host }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+
+     - host: '{{ host }}'
+     - site: sbir
+     - tier: '{{ tier }}'
+     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - drupalroot: /local/drupal/{{ site }}
+     - dbfile: "{{ site }}-{{ tier }}-db"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy: "{{ site }}-site-{{ tier }}-copy"
+     #- giturl: https://{{ gituser }}:{{ gitpassword }}@github.com/NCIOCPL/drupal-sbir
+     - giturl: https://github.com/NCIOCPL/drupal-sbir
+     - gitroot: /local/drupal/gitsource/drupal-sbir
+     - backups: /local/drupal/backups
+     - drupaluser: drupal
+     - gituser: '{{ gituser }}'
+     - gitpassword: '{{ gitpassword }}'
+     - files: "{{ gitroot }}/sites/{{ site }}/files"
+     - git_version: '{{ git_version }}'
+     - deploy_branch: '{{ deploy_branch }}'
+    
+
+
+   tasks:
+
+     - name: Find all the files in backups directory that are older than 30 days and delete them
+       command: find /local/drupal/backups -mindepth 1 -mtime +30 -exec rm -rf {} \;
+  
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+         chdir: "{{ siteroot }}"
+
+     - name: Backup drupal core directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
+         chdir: "{{ drupalroot }}/../"
+
+     - name: Sanitize the local git directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Checkout git branch
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+         version: "{{ git_version }}"
+       when: deploy_branch == "yes"
+
+     - name: Checkout git master
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       when: deploy_branch == "no"
+         
+     - name: rsync the sites directory
+       shell:
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files {{ gitroot }}/  {{ drupalroot }}/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+
+     - name: rsync the files directory just in case files are uploaded
+       shell:
+         cmd: rsync -rvcCi  {{ files }}/  {{ siteroot }}/files/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+
+     - name: Change ownership of {{ site }} site
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Find type  directory in mynci.cancer.gov and change permissions to 755
+       shell:
+         cmd: find . -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in mynci.cancer.gov and change permission to 644
+       shell:
+         cmd: find . -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+         
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+     

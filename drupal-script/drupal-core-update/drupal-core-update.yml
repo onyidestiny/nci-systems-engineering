@@ -1,0 +1,113 @@
+---
+ - name: Drupal Core Update to {{ drupal_version }}
+   hosts: '{{ hosts }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+
+     - site: '{{ site }}'
+     - tier: '{{ tier }}'
+     - drupal_version: '{{ drupal_version }}'
+     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - drupalroot: /local/drupal/{{ site }}
+     - dbfile: "{{ site }}-{{ tier }}-db"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy: "{{ site }}-site-{{ tier }}-copy"
+     - backups: /local/drupal/backups
+     - drupaluser: drupal
+
+   tasks:
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ siteroot }}"
+
+     - name: Backup site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ drupalroot }}
+         
+
+     - name: Copy .htaccess file to /tmp
+       shell: 
+         cmd: cp -p .htaccess /tmp/htaccess-preserve-7.50
+         chdir: "{{ drupalroot }}"
+
+     - name: Copy robots.txt to /tmp
+       shell: 
+         cmd: cp -p robots.txt /tmp/robots-preserve-7.50
+         chdir: "{{ drupalroot }}"
+
+     - name: Put the {{ site }} into maintenance mode
+       shell: 
+         cmd: drush vset --exact maintenance_mode 1
+         chdir: "{{ siteroot }}"
+       register: maint_mode
+     - debug: msg={{ maint_mode }}
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+  
+     - name: Update the drupal core
+       shell: 
+         cmd: drush pm-update drupal-{{ drupal_version }} -y --verbose --no-backup
+         chdir: "{{ siteroot }}"
+       register: drupalupdate
+     - debug: msg={{ drupalupdate }}
+
+     - name: Restore .htaccess file from /tmp
+       shell: 
+         cmd: cp -p /tmp/htaccess-preserve-7.50 .htaccess
+         chdir: "{{ drupalroot }}"
+
+     - name: Restore robots.txt file from /tmp
+       shell: 
+         cmd: cp -p  /tmp/robots-preserve-7.50 robots.txt
+         chdir: "{{ drupalroot }}"
+
+     - name: Change ownership of {{ site }} site.
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Remove install.php file
+       file: 
+         path: "{{ drupalroot }}/install.php"
+         state: absent
+     
+     - name: Modify drupal root permissions
+       shell: 
+         cmd: chmod -R a+r *
+         chdir: "{{ drupalroot }}"
+
+     
+     - name: Update the drupal drupal database
+       shell: 
+         cmd: drush updatedb -y
+         chdir: "{{ siteroot }}"
+       register: dbupdate
+     - debug: msg={{ dbupdate }}
+
+     - name: Take the {{ site }} out of maintenance mode
+       shell: 
+         cmd: drush vset --exact maintenance_mode 0
+         chdir: "{{ siteroot }}"
+       register: maint_mode
+     - debug: msg={{ maint_mode }}
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+
+     - name: Verify Drush version
+       shell:
+         cmd: drush status | grep 'Drupal version'
+         chdir: "{{ siteroot }}"
+       register: ver
+     - debug: msg={{ ver.stdout }}
+

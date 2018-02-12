@@ -1,0 +1,37 @@
+---
+- name: Setup NCI deployment account
+  hosts: "{{ host }}"
+  become: yes
+  become_user: root
+  become_method: sudo
+
+  vars:
+    - host: '{{ host }}'
+    - deployment_user: ncideployment
+  
+  tasks:
+    - name: Create ncideployment user
+      user: 
+        name: "{{ deployment_user }}"
+        shell: /bin/bash
+        groups: ncimaint
+        state: present
+        uid: 60000
+    - name: Ensure we have #includedir /etc/sudoers.d
+      lineinfile:
+        path: /etc/sudoers
+        insertafter: EOF
+        line: '#includedir /etc/sudoers.d'
+     
+    - name: Give ncideployment user root privileges 
+      copy: 
+        src: ./{{ deployment_user }}
+        dest: /etc/sudoers.d/
+        mode: 0440
+       
+
+    
+
+
+
+      

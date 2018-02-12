@@ -1,0 +1,86 @@
+---
+ - name: imat prod deployment
+   hosts: imat-prod
+   become: yes
+   become_user: drupal
+   become_method: dzdo
+   vars:
+
+     - imatroot: /local/drupal/imat/sites/default
+     - drupalroot: /local/drupal/imat
+     - dbfile: imat-prod-db
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy:  imat-site-prod-copy
+     - svnurl: https://ncisvn.nci.nih.gov/svn/imatdrupal
+     - svn_root: /local/drupal/svn_source/imatdrupal/imatdrupal
+     - backups: /local/drupal/backups
+     - tier: prod
+     - rsynchost: nciws-p771-v
+     - drupaluser: drupal
+     - rsyncsrc: /local/drupal/svn_source/imatdrupal/imatdrupal/trunk
+
+
+   tasks:
+     - name: Take sql dump of prod database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
+         chdir: "{{ imatroot }}"
+
+     - name: Backup imat site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Checkout svn
+       subversion:
+         repo: "{{ svnurl }}"
+         dest: "{{ svn_root }}"
+         username: donkorvn
+         
+  
+     - name: rsync the sites directory
+       synchronize:
+         src: "{{ rsyncsrc }}/sites/"
+         dest: "{{ drupalroot }}/sites/"
+         recursive: yes
+         perms: no
+       delegate_to: "{{ rsynchost }}"
+
+     - name: Change ownership of imat site
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Find type  directory in all and change permission to 755
+       shell:
+         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ imatroot }}"
+
+     - name: Find type  file in themes and change permission to 644
+       shell:
+         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ imatroot }}"
+
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ imatroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ imatroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ imatroot }}"
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ imatroot }}"
+     

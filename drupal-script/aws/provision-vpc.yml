@@ -1,0 +1,93 @@
+---
+- name: Provision vpc
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    - ec2_vpc_cidr: 10.0.0.0/16
+    - ec2_subnet_cidr: 10.0.0.0/24
+    - vpc_name: "{{ project_name }}-vpc"
+    - aws_az: '{{ aws_az }}'
+    - ec2_key_name: aws-devops-key
+    - aws_region: '{{ aws_region }}'
+    - ec2_instance_type: t2.micro
+    - security_group: "{{ project_name }}-webservers"
+    - ami: ami-55ef662f
+    - project_name: '{{ project_name }}'
+    - team: devops
+    
+
+  tasks:
+  - name: create the vpc
+    ec2_vpc_net:
+      state: present
+      region: "{{ aws_region }}"
+      cidr_block: "{{ ec2_vpc_cidr }}"
+      name: "{{ vpc_name }}"
+      tags:
+        team: "{{ team }}"
+    register: network
+
+  - name: create vpc subnet
+    ec2_vpc_subnet:
+      state: present
+      region: "{{ aws_region }}"
+      az: "{{ aws_region }}{{ aws_az }}"
+      cidr: "{{ ec2_subnet_cidr }}"
+      vpc_id: "{{ network.vpc.id }}"
+      resource_tags:
+        team: "{{ team }}"
+        Name: "{{ project_name }}-subnet-{{ aws_az }}"
+    register: vpc_subnet
+
+  - name: create internet gateway
+    ec2_vpc_igw:
+      region: "{{ aws_region }}"
+      vpc_id: "{{ network.vpc.id }}"
+      state: present
+    register: igw
+
+  - name: create vpc public subnet table
+    ec2_vpc_route_table:
+      region: "{{ aws_region }}"
+      vpc_id: "{{ network.vpc.id }}"
+      subnets: 
+        - "{{ vpc_subnet.subnet.id }}"
+      routes:
+        - dest: 0.0.0.0/0
+          gateway_id: "{{ igw.gateway_id }}"
+      tags:
+        Name: "{{ project_name }}-public-route"
+
+  - name: create security group
+    ec2_group:
+      name: "{{ security_group }}"
+      region: "{{ aws_region }}"
+      description: Security group for ssh and http/https
+      vpc_id: "{{ network.vpc.id }}"
+      rules:
+        - proto: tcp 
+          from_port: 22 
+          to_port: 22 
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp 
+          from_port: 80 
+          to_port: 80 
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp 
+          from_port: 443 
+          to_port: 443 
+          cidr_ip: 0.0.0.0/0
+    register: sg_group
+
+  - debug: msg="{{ sg_group }}"
+
+  - name: stash variables
+    set_stats:
+      data:
+        subnet_id: "{{ vpc_subnet.subnet.id }}"
+        aws_region: "{{ aws_region }}"
+        sg_group: "{{ security_group }}"
+        project_name: "{{ project_name }}"
+        

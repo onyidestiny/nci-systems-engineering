@@ -1,0 +1,131 @@
+---
+ - include: prod-dump.yml
+   when: hosts != "nciws-p652-v"
+
+ - name: Smokefree files backup and deployment
+   hosts: '{{ hosts }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+     - host_s: '{{ hosts }}'
+     - siteroot: /local/drupal/smokefree/sites/smokefree
+     - site: smokefree
+     - drupalroot: /local/drupal/smokefree
+     - prodfile: smokefree-prod-db.sql
+     - proddump: /admfs/drupal_deployment/smokefree
+     - dbfile: "{{ site }}-{{ tier }}-db-{{ date }}.sql"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy:  "{{ site }}-site-{{ tier }}-copy"
+     - giturl: https://github.com/CBIIT/smokefree
+     - gitsource: /local/drupal/gitsource
+     - backups: /local/drupal/backups
+     - tier: '{{ tier }}'
+     - drupaluser: drupal
+     - database_location: /admfs/drupal_deployment/smokefree
+     - deploydb: '{{ deploydb }}'
+     - gitroot: /local/drupal/gitsource/smokefree
+     - files: "{{ gitroot }}/sites/{{ site }}/default/files"
+
+   tasks:
+
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: drush sql-dump --result-file={{ backups }}/{{ dbfile }}
+         chdir: "{{ siteroot }}"
+
+     - name: Backup smokefree site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Sanitize the local svn repo directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Checkout git repo
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       register: gitout
+     - debug: msg={{ gitout }}
+
+     - name: rsync drupalroot directory
+       shell:
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files {{ gitroot }}/  {{ drupalroot }}/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: rsync the files directory just in case files are uploaded
+       shell:
+         cmd: rsync -rvcCi  {{ files }}/  {{ siteroot }}/files/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+
+     - name: Change ownership of all directory
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+
+     - name: Find type  directory in smokefree and change permissions to 755
+       shell:
+         cmd: find . -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ drupalroot }}"
+
+     - name: Find type  file in smokefree and change permission to 644
+       shell:
+         cmd: find . -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ drupalroot }}"
+
+
+     - name: Import the production database from prod
+       shell: 
+         cmd:  drush sql-cli < {{ proddump }}/{{ prodfile }}
+         chdir: "{{ siteroot }}"
+       when: 
+         - deploydb  == "Yes"
+         - hosts != "nciws-p652-v"
+
+     - name: Import the new database from prod 
+       shell: 
+         cmd:  drush sql-cli < {{ database_location }}/smokefree-database-update.sql
+         chdir: "{{ siteroot }}"
+       when: deploydb  == "Yes"
+         
+     - name: Enable nci_SSO module
+       shell:
+         cmd: drush en nci_SSO -y
+         chdir: "{{ siteroot }}"
+         
+
+     - name: Restart memcached service
+       service:
+         name: memcached
+         state: restarted
+
+     - name: Ensure memcached service is running
+       service:
+         name: memcached
+         state: started
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+
+
+
+
+
+
+
+
+
+   
+
+     

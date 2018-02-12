@@ -1,0 +1,16 @@
+sitename: mynci
+#sitename: '{{ sitename }}'
+dbfile: "{{ site }}-{{ tier }}-db"
+drupalroot: /local/drupal/{{ sitename }}
+siteroot: "{{ drupalroot }}/sites/mynci.cancer.gov"
+backups: /local/drupal/backups
+dbbackupfile: "{{ sitename }}-db"
+date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+sitecopy: "{{ sitename }}-copy"
+backup_directory: /admfs/drupal_deployment/{{ sitename }}
+backup_file: "refresh-{{ sitename }}.tgz"
+backup_dbfile: "refresh-{{ sitename }}-db.sql"
+tier: '{{ tier }}'
+refresh: '{{ refresh }}'
+thost: '{{ thost }}'
+fhost: '{{ fhost }}'

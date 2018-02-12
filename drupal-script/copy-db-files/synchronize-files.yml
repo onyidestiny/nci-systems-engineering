@@ -1,0 +1,20 @@
+---
+- name: Transfer db files
+  hosts: '{{ host }}'
+  become: yes
+  become_user: root
+  become_method: dzdo
+  gather_facts: no
+  vars:
+    database_location: /admfs/drupal_deployment
+    sitename: '{{ sitename }}'
+    host: '{{ host }}'
+  tasks:
+    - name: copying the db file to admfs
+      copy: 
+        src:  uploads/{{ sitename }}.sql
+        dest: "{{ database_location }}/{{ sitename }}/{{ sitename }}-database-update.sql"
+         
+         
+
+      

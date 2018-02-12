@@ -1,0 +1,150 @@
+---
+# - include: prod-dump.yml
+#   when: hosts != "nciws-p652-v"
+
+ - name: Teensmokefree files backup and deployment
+   hosts: '{{ hosts }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+     - host_s: '{{ hosts }}'
+     - siteroot: /local/drupal/smokefree/sites/teen-smokefree
+     - site: teen-smokefree
+     - drupalroot: /local/drupal/smokefree
+     - prodfile: teen-smokefree-prod-db.sql
+     - proddump: /admfs/drupal_deployment/teen-smokefree
+     - dbfile: "{{ site }}-{{ tier }}-db-{{ date }}.sql"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy:  "{{ site }}-site-{{ tier }}-copy"
+     - giturl: https://github.com/CBIIT/teen.smokefree.gov
+     - gitsource: /local/drupal/gitsource
+     - backups: /local/drupal/backups
+     - tier: '{{ tier }}'
+     - drupaluser: drupal
+     - database_location: /admfs/drupal_deployment/smokefree
+     - deploydb: '{{ deploydb }}'
+     - gitroot: /local/drupal/gitsource/smokefree
+
+   tasks:
+
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: drush sql-dump --result-file={{ backups }}/{{ dbfile }}
+         chdir: "{{ siteroot }}"
+
+     - name: Backup smokefree site directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         chdir: "{{ drupalroot }}"
+
+     - name: Sanitize the local svn repo directory
+       file:
+         path: "{{ gitroot }}"
+         state: absent
+
+     - name: Checkout git repo
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       register: gitout
+     - debug: msg={{ gitout }}
+
+     - name: rsync the modules directory
+       shell:
+         cmd: rsync -rvcCi --delete {{ gitroot }}/{{ site }}/sites/all/  {{ siteroot }}/../all/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: rsync the sites directory
+       shell:
+        cmd: rsync -rvcCi  --exclude=settings.php "{{ gitroot }}/{{ site }}/sites/default/"  "{{ siteroot }}"
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: Change ownership of all directory
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ siteroot }}/../all"
+         recurse: yes
+
+     - name: Change ownership of default directory
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ siteroot }}/files"
+         recurse: yes
+
+     - name: Find type  directory in all and change permission to 755
+       shell:
+         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in all and change permission to 644
+       shell:
+         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  directory in files and change permission to 775
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod 775
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in files and change permission to 664
+       shell:
+         cmd: find files -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  directory in files and change group bit
+       shell:
+         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         chdir: "{{ siteroot }}"
+
+
+     - name: Import the production database from prod
+       shell: 
+         cmd:  drush sql-cli < {{ proddump }}/{{ prodfile }}
+         chdir: "{{ siteroot }}"
+       when: 
+         - deploydb  == "Yes"
+         - hosts != "nciws-p652-v"
+
+     - name: Import the new database from prod 
+       shell: 
+         cmd:  drush sql-cli < {{ database_location }}/smokefree-database-update.sql
+         chdir: "{{ siteroot }}"
+       when: deploydb  == "Yes"
+         
+     - name: Enable nci_SSO module
+       shell:
+         cmd: drush en nci_SSO -y
+         chdir: "{{ siteroot }}"
+         
+
+     - name: Restart memcached service
+       service:
+         name: memcached
+         state: restarted
+
+     - name: Ensure memcached service is running
+       service:
+         name: memcached
+         state: started
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+
+
+
+
+
+
+
+
+
+   
+
+     

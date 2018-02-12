@@ -1,0 +1,13 @@
+---
+- name: Testing ansible tower
+  hosts: all
+  
+  vars:
+    - default_msg: '{{ default_msg }}'
+  tasks:
+ 
+  - name: Say Hello
+    shell: echo "{{ default_msg }}"
+    register: echo
+
+  - debug: msg={{ echo.stdout }}

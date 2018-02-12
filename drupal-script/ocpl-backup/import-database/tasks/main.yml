@@ -1,0 +1,13 @@
+---
+# tasks file for import-db
+- include_vars: ../../vars.yml
+
+- name: Import {{ sitename }} prod database to {{ tier }}
+  shell: 
+    cmd: cd {{ siteroot }} && drush sql-cli < {{ backup_directory }}/{{ backup_dbfile }}
+
+- name: Clear drush cache
+  shell:
+    cmd: drush cc all
+    chdir: "{{ siteroot }}"
+      

@@ -1,0 +1,25 @@
+---
+- name: Refresh files and database to {{ sitename }}
+  hosts: '{{ vhost }}'
+  become: yes
+  become_user: drupal
+  become_method: dzdo
+  gather_facts: yes
+  vars_files:
+    - vars.yml
+  
+  roles:
+   - { role: refresh-files, when: refresh == "files" }
+   - { role: refresh-db, when: refresh == "database" } 
+   - { role: refresh-db-files, when: refresh == "files and database" }
+
+- name: Applying copies from {{ tier }} to the container
+  hosts: '{{ chost }}'
+  become: yes
+  become_user: drupal
+  become_method: dzdo
+  gather_facts: yes
+  roles:
+   - { role: sync-files, when: refresh == "files" }
+   - { role: apply-db, when: refresh == "database" }
+   - { role: full-refresh, when: refresh == "files and database" }
