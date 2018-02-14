@@ -22,12 +22,12 @@
 
 
    tasks:
-     - name: Take sql dump of prod database.
+     - name: Take sql dump of {{ tier }} database.
        shell: 
          cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
          chdir: "{{ siteroot }}"
 
-     - name: Backup imat site directory
+     - name: Backup {{ site }} site directory
        shell: 
          cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
          chdir: "{{ drupalroot }}"
