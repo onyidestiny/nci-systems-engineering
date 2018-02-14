@@ -18,6 +18,8 @@
      - gitroot: /local/drupal/gitsource/nci-imat
      - backups: /local/drupal/backups
      - drupaluser: drupal
+     - git_version: '{{ git_version }}'
+     - deploy_branch: '{{ deploy_branch }}'
    
 
 
@@ -32,15 +34,23 @@
          cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
          chdir: "{{ drupalroot }}"
 
-     - name: Checkout git
+     - name: Checkout git branch
        git:
          repo: "{{ giturl }}"
          dest: "{{ gitroot }}"
+         version: "{{ git_version }}"
+       when: deploy_branch == "yes"
+
+     - name: Checkout git master
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       when: deploy_branch == "no"
          
   
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi  {{ gitroot }}/sites/  {{ drupalroot }}/sites/
+         cmd: rsync -rvcCi --exclude=settings.php {{ gitroot }}/sites/  {{ drupalroot }}/sites/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
