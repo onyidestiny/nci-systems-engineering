@@ -1,6 +1,6 @@
 ---
  - name: ncl deployment
-   hosts: '{{ hosts }}'
+   hosts: '{{ host }}'
    become: yes
    become_user: root
    become_method: dzdo
@@ -18,6 +18,8 @@
      - gitroot: /local/drupal/gitsource/nci-ncl
      - backups: /local/drupal/backups
      - drupaluser: drupal
+     - git_version: '{{ git_version }}'
+     - deploy_branch: '{{ deploy_branch }}'
      
 
 
@@ -37,15 +39,23 @@
          path: "{{ gitroot }}"
          state: absent
 
-     - name: Checkout git
+     - name: Checkout git branch
        git:
          repo: "{{ giturl }}"
          dest: "{{ gitroot }}"
+         version: "{{ git_version }}"
+       when: deploy_branch == "yes"
+
+     - name: Checkout git master
+       git:
+         repo: "{{ giturl }}"
+         dest: "{{ gitroot }}"
+       when: deploy_branch == "no"
         
          
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi {{ gitroot }}/sites/  {{ drupalroot }}/sites/
+         cmd: rsync -rvcCi --exclude=settings.php {{ gitroot }}/sites/  {{ drupalroot }}/sites/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
@@ -56,30 +66,14 @@
          path: "{{ drupalroot }}"
          recurse: yes
 
-     - name: Find type  directory in all and change permission to 755
+     - name: Find type  directory in {{ site }} and change permissions to 755
        shell:
-         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         cmd: find . -type d -print0 | xargs -0 chmod 755
          chdir: "{{ siteroot }}"
 
-     - name: Find type  file in themes and change permission to 644
+     - name: Find type  file in {{ site }} and change permission to 644
        shell:
-         cmd: find ../all -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-
-     - name: Find type  directory in files and change permission to 775
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod 775
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  file in files and change permission to 664
-       shell:
-         cmd: find files -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  directory in files and change group bit
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
 
      - name: Clear drush cache

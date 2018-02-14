@@ -1,6 +1,6 @@
 ---
  - name: imat deployment
-   hosts: '{{ hosts }}'
+   hosts: '{{ host }}'
    become: yes
    become_user: root
    become_method: dzdo
@@ -24,6 +24,8 @@
 
 
    tasks:
+    
+
      - name: Take sql dump of prod database.
        shell: 
          cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
