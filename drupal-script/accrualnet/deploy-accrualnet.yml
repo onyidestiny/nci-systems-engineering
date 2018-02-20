@@ -9,7 +9,7 @@
      - host: '{{ host }}'
      - site: accrualnet
      - tier: '{{ tier }}'
-     - siteroot: /local/drupal/accrualnet/sites/{{ accrualnet.cancer.gov }}
+     - siteroot: /local/drupal/{{ site }}/sites/accrualnet.cancer.gov
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
