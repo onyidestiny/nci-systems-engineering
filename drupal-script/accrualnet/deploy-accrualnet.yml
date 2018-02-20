@@ -7,10 +7,10 @@
    vars:
 
      - host: '{{ host }}'
-     - site: accrualnet.cancer.gov
+     - site: accrualnet
      - tier: '{{ tier }}'
-     - siteroot: /local/drupal/accrualnet/sites/{{ site }}
-     - drupalroot: /local/drupal/accrualnet
+     - siteroot: /local/drupal/accrualnet/sites/{{ accrualnet.cancer.gov }}
+     - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
      - sitecopy: "{{ site }}-site-{{ tier }}-copy"
@@ -36,7 +36,7 @@
 
      - name: Backup drupal core directory
        shell: 
-         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz mynci
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
          chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local git directory
