@@ -52,7 +52,7 @@
   
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi --exclude=settings.php {{ gitroot }}/sites/  {{ drupalroot }}/sites/
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files {{ gitroot }}/sites/  {{ drupalroot }}/sites/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
