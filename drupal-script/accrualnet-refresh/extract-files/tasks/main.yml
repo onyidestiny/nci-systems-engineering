@@ -1,0 +1,28 @@
+---
+# tasks file for sync-files
+- include_vars: ../../vars.yml
+
+- name: Backup drupal core directory on {{ tier }}
+  archive:
+    path: "{{ drupalroot }}"
+    dest: "{{ backups }}/{{ sitecopy }}-{{ date }}.tgz"
+    owner: "{{ drupaluser }}"
+    mode: 0644
+  
+- name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
+  unarchive:
+    src: "{{ backup_directory }}/{{ backup_file }}"
+    dest: "{{ drupalroot }}/../"
+    remote_src: yes
+  register: extract
+
+- debug: msg={{ extract }}
+
+- name: Clear drush cache
+  shell:
+    cmd: drush cc all
+    chdir: "{{ siteroot }}"
+  register: clear
+
+- debug: msg={{ clear }}
+    

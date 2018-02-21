@@ -1,0 +1,21 @@
+---
+# tasks file for refresh-files
+
+- include_vars: ../../vars.yml
+
+- name: Taking archive copy of {{ sitename }} {{ tier }}
+  command: tar --exclude=settings.php -czvf {{ backup_directory }}/{{ backup_file }}  {{ sitename }}
+  args: 
+    chdir : "{{ drupalroot }}/../"
+
+- name: Change the permission on {{ backup_file }} to 0664
+  file:
+    path: "{{ backup_directory }}/{{ backup_file }}"
+    owner: "{{ drupaluser }}"
+    mode: 0664
+
+
+
+    
+
+
