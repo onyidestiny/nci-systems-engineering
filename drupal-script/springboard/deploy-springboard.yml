@@ -12,7 +12,7 @@
      - hosts: '{{ hosts }}'
      - site: springboard
      - tier: '{{ tier }}'
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
@@ -71,7 +71,7 @@
          group: "{{ drupaluser }}"
          path: "{{ drupalroot }}"
          recurse: yes
-         
+
      - name: Find type  directory in {{ site }} and change permissions to 755
        shell:
          cmd: find . -type d -print0 | xargs -0 chmod 755
