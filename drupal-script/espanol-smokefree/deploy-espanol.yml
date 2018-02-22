@@ -63,12 +63,12 @@
          path: "{{ drupalroot }}"
          recurse: yes
 
-     - name: Find type  directory in mynci.cancer.gov and change permissions to 755
+     - name: Find type  directory in {{ site }} and change permissions to 755
        shell:
          cmd: find . -type d -print0 | xargs -0 chmod 755
          chdir: "{{ siteroot }}"
 
-     - name: Find type  file in mynci.cancer.gov and change permission to 644
+     - name: Find type  file in {{ site }} and change permission to 644
        shell:
          cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
