@@ -44,13 +44,7 @@
         
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi --delete {{ gitroot }}/espanol/sites/all/  {{ siteroot }}/../all/
-       register: rsyncout
-     - debug: msg={{ rsyncout }}
-
-     - name: rsync the sites directory
-       shell:
-         cmd: rsync -rvcCi --exclude=settings.php {{ gitroot }}/espanol/sites/default/  {{ siteroot }}/
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files  {{ gitroot }}/espanol/ {{ drupalroot }}/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
@@ -62,30 +56,14 @@
          path: "{{ drupalroot }}"
          recurse: yes
 
-     - name: Find type  directory in all and change permission to 755
+     - name: Find type  directory in mynci.cancer.gov and change permissions to 755
        shell:
-         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         cmd: find . -type d -print0 | xargs -0 chmod 755
          chdir: "{{ siteroot }}"
 
-     - name: Find type  file in themes and change permission to 644
+     - name: Find type  file in mynci.cancer.gov and change permission to 644
        shell:
-         cmd: find ../all -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-
-     - name: Find type  directory in files and change permission to 775
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod 775
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  file in files and change permission to 664
-       shell:
-         cmd: find files -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  directory in files and change group bit
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod g+s
+         cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
 
      - name: Restart memcached service
