@@ -9,7 +9,7 @@
      - hosts: '{{ hosts }}'
      - site: espanol.smokefree
      - tier: '{{ tier }}'
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
@@ -17,6 +17,7 @@
      - giturl: https://github.com/CBIIT/smokefree
      - gitroot: /local/drupal/gitsource/smokefree
      - backups: /local/drupal/backups
+     - files: "{{ gitroot }}/espanol/sites/default/files"
      - drupaluser: drupal
     
 
@@ -45,6 +46,12 @@
      - name: rsync the sites directory
        shell:
          cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files  {{ gitroot }}/espanol/ {{ drupalroot }}/
+       register: rsyncout
+     - debug: msg={{ rsyncout }}
+
+     - name: rsync the files directory just in case files are uploaded
+       shell:
+         cmd: rsync -rvcCi  {{ files }}/  {{ siteroot }}/files/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
