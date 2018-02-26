@@ -35,8 +35,8 @@
 
      - name: Backup smokefree site directory
        shell: 
-         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
-         chdir: "{{ drupalroot }}"
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
+         chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local svn repo directory
        file:
