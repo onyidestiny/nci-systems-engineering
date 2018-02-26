@@ -9,7 +9,7 @@
    become_method: dzdo
    vars:
      - host_s: '{{ hosts }}'
-     - siteroot: /local/drupal/smokefree/sites/smokefree
+     - siteroot: /local/drupal/smokefree/sites/default
      - site: smokefree
      - drupalroot: /local/drupal/smokefree
      - prodfile: smokefree-prod-db.sql
@@ -24,6 +24,7 @@
      - drupaluser: drupal
      - database_location: /admfs/drupal_deployment/smokefree
      - deploydb: '{{ deploydb }}'
+     - files: "{{ gitroot }}/smokefree/sites/default/files"
      - gitroot: /local/drupal/gitsource/smokefree
 
    tasks:
@@ -50,69 +51,36 @@
        register: gitout
      - debug: msg={{ gitout }}
 
-     - name: rsync the modules directory
+
+     - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi --delete {{ gitroot }}/{{ site }}/sites/all/  {{ siteroot }}/../all/
+         cmd: rsync -rvcCi --exclude=settings.php --exclude=files --exclude=.htaccess  {{ gitroot }}/smokefree/ {{ drupalroot }}/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
-     - name: rsync default directory
+     - name: rsync the files directory just in case files are uploaded
        shell:
-         cmd: rsync -rvcCi --exclude=settings.php {{ gitroot }}/{{ site }}/sites/default/  {{ siteroot }}/../default/
+         cmd: rsync -rvcCi  {{ files }}/  {{ siteroot }}/files/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
-     - name: rsync default directory
-       shell:
-         cmd: rsync -rvcCi --delete {{ gitroot }}/{{ site }}/sites/default/files/pdf/  {{ siteroot }}/../default/files/pdf/
-       register: rsyncout
-     - debug: msg={{ rsyncout }}
 
-     - name: rsync interactive directory
-       shell:
-         cmd: rsync -rvcCi --delete {{ gitroot }}/{{ site }}/sites/interactives/  {{ siteroot }}/../interactives/
-       register: rsyncout
-     - debug: msg={{ rsyncout }}
-
-     - name: rsync the everytrycounts directory
-       shell:
-        cmd: rsync -rvcCi   --delete "{{ gitroot }}/{{ site }}/everytrycounts/"  "{{ drupalroot }}/everytrycounts/"
-       register: rsyncout
-     - debug: msg={{ rsyncout }}
-
-     - name: Change ownership of all directory
+     - name: Change ownership of {{ site }} site
        file:
          owner: "{{ drupaluser }}"
          group: "{{ drupaluser }}"
          path: "{{ drupalroot }}"
          recurse: yes
 
-
-     - name: Find type  directory in all and change permission to 755
+     - name: Find type  directory in {{ site }} and change permissions to 755
        shell:
-         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         cmd: find . -type d -print0 | xargs -0 chmod 755
          chdir: "{{ siteroot }}"
 
-     - name: Find type  file in all and change permission to 644
+     - name: Find type  file in {{ site }} and change permission to 644
        shell:
-         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
-
-     - name: Find type  directory in files and change permission to 775
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod 775
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  file in files and change permission to 664
-       shell:
-         cmd: find files -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  directory in files and change group bit
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod g+s
-         chdir: "{{ siteroot }}"
-
 
      - name: Import the production database from prod
        shell: 
@@ -148,6 +116,12 @@
        shell:
          cmd: drush cc all
          chdir: "{{ siteroot }}"
+
+     - name: Ensure varnish is stopped
+       service: name=varnish state=stopped
+
+     - name: Ensure varnish is started
+       service: name=varnish state=started
 
 
 
