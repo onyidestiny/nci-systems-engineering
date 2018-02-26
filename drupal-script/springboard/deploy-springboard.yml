@@ -37,7 +37,7 @@
 
      - name: Backup site directory
        shell: 
-         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
          chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local svn repo directory
