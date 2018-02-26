@@ -38,7 +38,7 @@
      - name: Backup site directory
        shell: 
          cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
-         chdir: "{{ drupalroot }}"
+         chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local svn repo directory
        file:
@@ -106,4 +106,7 @@
        shell:
          cmd: drush cc all
          chdir: "{{ siteroot }}"
+
+     - name: Ensure varnish is restarted
+       service: name=varnish state=restarted
      
