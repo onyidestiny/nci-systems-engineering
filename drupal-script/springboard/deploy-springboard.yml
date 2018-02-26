@@ -64,6 +64,11 @@
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
+     - name: replace order deny in .htaccess with Require all granted
+       replace: 
+          path: "{{ drupalroot }}/.htaccess"
+          regexp: '^Order allow,deny$'
+          replace: 'Require all granted'
 
      - name: Change ownership of {{ site }} site
        file:
