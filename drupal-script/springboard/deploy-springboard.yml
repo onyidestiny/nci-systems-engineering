@@ -107,6 +107,9 @@
          cmd: drush cc all
          chdir: "{{ siteroot }}"
 
-     - name: Ensure varnish is restarted
-       service: name=varnish state=restarted
+     - name: Ensure varnish is stopped
+       service: name=varnish state=stopped
+
+     - name: Ensure varnish is started
+       service: name=varnish state=started
      
