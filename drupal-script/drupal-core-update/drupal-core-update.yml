@@ -1,6 +1,6 @@
 ---
  - name: Drupal Core Update to {{ drupal_version }}
-   hosts: '{{ hosts }}'
+   hosts: '{{ host }}'
    become: yes
    become_user: root
    become_method: dzdo

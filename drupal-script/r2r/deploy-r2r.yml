@@ -29,8 +29,8 @@
 
      - name: Backup site directory
        shell: 
-         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
-         chdir: "{{ drupalroot }}"
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
+         chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local svn repo directory
        file:
@@ -44,7 +44,7 @@
   
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files {{ gitroot }}/default/  {{ drupalroot }}/sites/default/
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files {{ gitroot }}/ {{ drupalroot }}/sites/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
