@@ -59,12 +59,12 @@
 
      - name: Restore .htaccess file from /tmp
        shell: 
-         cmd: cp -p /tmp/htaccess-preserve-7.50 .htaccess
+         cmd: cp -p /tmp/htaccess-preserve-{{ drupal_version }} .htaccess
          chdir: "{{ drupalroot }}"
 
      - name: Restore robots.txt file from /tmp
        shell: 
-         cmd: cp -p  /tmp/robots-preserve-7.50 robots.txt
+         cmd: cp -p  /tmp/robots-preserve-{{ drupal_version }} robots.txt
          chdir: "{{ drupalroot }}"
 
      - name: Change ownership of {{ site }} site.
