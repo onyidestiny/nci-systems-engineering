@@ -3,7 +3,7 @@
     "vpc": "{{env `BUILD_VPC_ID`}}",
     "subnet": "{{env `BUILD_SUBNET_ID`}}",
     "aws_region": "{{env `AWS_REGION`}}",
-    "ami_name": "Prod-CIS-Latest-AMZN-{{isotime \"02-Jan-06 03_04_05\"}}"
+    "ami_name": "Centos-CIS-Latest-Gold-{{isotime \"02-Jan-06 03_04_05\"}}"
   },
   "builders": [{
     "name": "AWS AMI Builder - CIS",
@@ -15,9 +15,7 @@
             "name": "amzn-ami*-ebs",
             "root-device-type": "ebs"
         },
-        "owners": ["137112412989", "591542846629", "801119661308",
-                   "102837901569", "013907871322", "206029621532", 
-                   "286198878708", "443319210888"],
+        "owners": ["924184629216"],
         "most_recent": true
     },
     "instance_type": "t2.micro",
@@ -35,7 +33,7 @@
     "snapshot_tags": {
       "Name": "{{user `ami_name`}}"
     },
-    "ami_description": "Amazon Linux CIS with Cloudwatch Logs agent",
+    "ami_description": "Centos CIS Golden Image",
     "associate_public_ip_address": "true",
     "vpc_id": "{{user `vpc`}}",
     "subnet_id": "{{user `subnet`}}"
