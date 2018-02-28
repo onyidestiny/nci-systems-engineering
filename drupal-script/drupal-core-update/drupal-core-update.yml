@@ -9,7 +9,7 @@
      - site: '{{ site }}'
      - tier: '{{ tier }}'
      - drupal_version: '{{ drupal_version }}'
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
@@ -30,12 +30,12 @@
 
      - name: Copy .htaccess file to /tmp
        shell: 
-         cmd: cp -p .htaccess /tmp/htaccess-preserve-7.50
+         cmd: cp -p .htaccess /tmp/htaccess-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
 
      - name: Copy robots.txt to /tmp
        shell: 
-         cmd: cp -p robots.txt /tmp/robots-preserve-7.50
+         cmd: cp -p robots.txt /tmp/robots-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
 
      - name: Put the {{ site }} into maintenance mode
