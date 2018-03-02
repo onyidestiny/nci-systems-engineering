@@ -4,4 +4,4 @@
     become_method: sudo
 
     roles:
-- oracle-jdk8   
+      - oracle-jdk8   
