@@ -1,6 +1,6 @@
 ---
  - name: Drupal Core Update to {{ drupal_version }}
-   hosts: '{{ hosts }}'
+   hosts: '{{ host }}'
    become: yes
    become_user: root
    become_method: dzdo
@@ -9,7 +9,7 @@
      - site: '{{ site }}'
      - tier: '{{ tier }}'
      - drupal_version: '{{ drupal_version }}'
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
@@ -30,12 +30,12 @@
 
      - name: Copy .htaccess file to /tmp
        shell: 
-         cmd: cp -p .htaccess /tmp/htaccess-preserve-7.50
+         cmd: cp -p .htaccess /tmp/htaccess-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
 
      - name: Copy robots.txt to /tmp
        shell: 
-         cmd: cp -p robots.txt /tmp/robots-preserve-7.50
+         cmd: cp -p robots.txt /tmp/robots-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
 
      - name: Put the {{ site }} into maintenance mode
@@ -59,12 +59,12 @@
 
      - name: Restore .htaccess file from /tmp
        shell: 
-         cmd: cp -p /tmp/htaccess-preserve-7.50 .htaccess
+         cmd: cp -p /tmp/htaccess-preserve-{{ drupal_version }} .htaccess
          chdir: "{{ drupalroot }}"
 
      - name: Restore robots.txt file from /tmp
        shell: 
-         cmd: cp -p  /tmp/robots-preserve-7.50 robots.txt
+         cmd: cp -p  /tmp/robots-preserve-{{ drupal_version }} robots.txt
          chdir: "{{ drupalroot }}"
 
      - name: Change ownership of {{ site }} site.

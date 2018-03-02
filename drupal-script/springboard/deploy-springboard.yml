@@ -12,7 +12,7 @@
      - hosts: '{{ hosts }}'
      - site: springboard
      - tier: '{{ tier }}'
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ site }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
@@ -26,6 +26,7 @@
      - prodsqlfile:  "{{ site }}-prod-db.sql"
      - deploydb: '{{ deploydb }}'
      - drupaluser: drupal
+     - files: "{{ gitroot }}/sites/default/files"
 
 
    tasks:
@@ -36,8 +37,8 @@
 
      - name: Backup site directory
        shell: 
-         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz sites
-         chdir: "{{ drupalroot }}"
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ site }}
+         chdir: "{{ drupalroot }}/../"
 
      - name: Sanitize the local svn repo directory
        file:
@@ -53,16 +54,9 @@
   
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi  {{ gitroot }}/sites/all/  {{ siteroot }}/../all/
+         cmd: rsync -rvcCi --delete --exclude=settings.php --exclude=files --exclude=.htaccess {{ gitroot }}/  {{ drupalroot }}/
        register: rsyncout
      - debug: msg={{ rsyncout }}
-
-     - name: rsync the sites directory
-       shell:
-         cmd: rsync -rvcCi  --exclude=settings.php {{ gitroot }}/sites/default/  {{ siteroot }}/
-       register: rsyncout
-     - debug: msg={{ rsyncout }}
-
 
      - name: rsync the files directory
        shell:
@@ -70,6 +64,11 @@
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
+     # - name: replace order deny in .htaccess with Require all granted
+     #   replace: 
+     #      path: "{{ drupalroot }}/.htaccess"
+     #      regexp: '^Order allow,deny$'
+     #      replace: 'Require all granted'
 
      - name: Change ownership of {{ site }} site
        file:
@@ -78,31 +77,16 @@
          path: "{{ drupalroot }}"
          recurse: yes
 
-     - name: Find type  directory in all and change permission to 755
+     - name: Find type  directory in {{ site }} and change permissions to 755
        shell:
-         cmd: find ../all -type d -print0 | xargs -0 chmod 755
+         cmd: find . -type d -print0 | xargs -0 chmod 755
          chdir: "{{ siteroot }}"
 
-     - name: Find type  file in themes and change permission to 644
+     - name: Find type  file in {{ site }} and change permission to 644
        shell:
-         cmd: find ../all -type f -print0 | xargs -0 chmod 644
+         cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
 
-
-     - name: Find type  directory in files and change permission to 775
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod 775
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  file in files and change permission to 664
-       shell:
-         cmd: find files -type f -print0 | xargs -0 chmod 644
-         chdir: "{{ siteroot }}"
-
-     - name: Find type  directory in files and change group bit
-       shell:
-         cmd: find files -type d -print0 | xargs -0 chmod g+s
-         chdir: "{{ siteroot }}"
 
      - name: Import the production database
        shell: 
@@ -127,4 +111,10 @@
        shell:
          cmd: drush cc all
          chdir: "{{ siteroot }}"
+
+     - name: Ensure varnish is stopped
+       service: name=varnish state=stopped
+
+     - name: Ensure varnish is started
+       service: name=varnish state=started
      
