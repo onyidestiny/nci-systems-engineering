@@ -39,4 +39,4 @@
     - name: Clean up
       file: state=absent path={{java_archive}}
     
-when: java_installed.stdout == ""
+    when: java_installed.stdout == ""
