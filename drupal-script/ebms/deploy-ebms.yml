@@ -1,0 +1,64 @@
+--- 
+- name: Ebms Deployment
+  hosts: '{{ host }}'
+  become: yes
+  become_user: "{{ drupaluser }}"
+  become_method: dzdo
+  vars:
+
+    - workdir: /tmp
+    - siteroot: "{{ drupalroot }}/sites/default"
+    - site: ebms
+    - release: '{{ release }}'
+    - drupalroot: /local/drupal
+    - dbfile: "{{ site }}-{{ tier }}-db-{{ date }}.sql"
+    - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+    - sitecopy:  "{{ site }}-site-{{ tier }}-copy"
+    - scriturl: https://github.com/NCIOCPL/ebms/blob/work/scripts/release-3.5.2.sh
+    - backups: /local/backups
+    - tier: '{{ tier }}'
+    - drupaluser: drupal
+  
+  tasks:
+
+    - name: Take sql dump of {{ tier }} database.
+      shell: 
+        cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+        chdir: "{{ siteroot }}"
+
+    - name: Backup drupal core directory
+      shell: 
+        cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz drupal
+        chdir: "{{ drupalroot }}/../"
+
+    - name: Download the deployment script.
+      command: wget {{ scriturl }}
+      args:
+        chdir: "{{ workdir }}"
+
+    - name: make script executable
+      file:
+        path: "{{ workdir }}/{{ release }}"
+        mode: 0755
+
+    - name: execute the script
+      script: "{{ release }}"
+      args:
+        chdir: "{{ workdir }}"
+
+    - name: Find type  directory in {{ site }} and change permissions to 755
+       shell:
+         cmd: find . -type d -print0 | xargs -0 chmod 755
+         chdir: "{{ siteroot }}"
+
+     - name: Find type  file in {{ site }} and change permission to 644
+       shell:
+         cmd: find . -type f -print0 | xargs -0 chmod 644
+         chdir: "{{ siteroot }}"
+         
+     - name: Clear drush cache
+       shell:
+         cmd: drush cc all
+         chdir: "{{ siteroot }}"
+
+
