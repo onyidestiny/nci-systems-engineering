@@ -7,7 +7,7 @@
   vars:
 
     - workdir: /tmp
-    - siteroot: "{{ drupalroot }}/sites/default"
+    - siteroot: "{{ drupalroot }}/sites/ebms.nci.nih.gov"
     - site: ebms
     - release: '{{ release }}'
     - drupalroot: /local/drupal
