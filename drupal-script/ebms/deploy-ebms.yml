@@ -39,7 +39,7 @@
         state: absent
 
     - name: remove any file or directory related to previous deployment
-      shell: rm -rf "/tmp/{{ site }}*"
+      shell: rm -rf /tmp/ebms-*
         
 
     - name: Download the deployment script.
