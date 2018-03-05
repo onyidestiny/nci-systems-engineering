@@ -39,9 +39,8 @@
         state: absent
 
     - name: remove any file or directory related to previous deployment
-      file:
-        path: "/tmp/{{ site }}*"
-        state: absent
+      command: rm -rf "/tmp/{{ site }}*"
+        
 
     - name: Download the deployment script.
       git:
