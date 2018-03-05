@@ -55,10 +55,9 @@
 
     - name: execute the script
       command: sh "{{ script }}"
-      register: script-out
+      register: script_out
 
-    - name: Print console out
-      debug: msg="{{ script-out.stdout }}"
+    - debug: msg="{{ script_out.stdout }}"
 
 
     - name: Find type  directory in {{ site }} and change permissions to 755
