@@ -11,36 +11,52 @@
     - site: ebms
     - release: '{{ release }}'
     - drupalroot: /local/drupal
+    - giturl:   https://github.com/NCIOCPL/ebms
+    - gitroot: "{{ workdir }}/ebms"
     - dbfile: "{{ site }}-{{ tier }}-db-{{ date }}.sql"
     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
     - sitecopy:  "{{ site }}-site-{{ tier }}-copy"
-    - scriturl: https://github.com/NCIOCPL/ebms/blob/work/scripts/release-3.5.2.sh
+    - script: "{{ gitroot }}/scripts/{{ release }}"
     - backups: /local/backups
     - tier: '{{ tier }}'
     - drupaluser: drupal
   
   tasks:
 
-    - name: Take sql dump of {{ tier }} database.
-      shell: 
-        cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
-        chdir: "{{ siteroot }}"
+    # - name: Take sql dump of {{ tier }} database.
+    #   shell: 
+    #     cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+    #     chdir: "{{ siteroot }}"
 
-    - name: Backup drupal core directory
-      shell: 
-        cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz drupal
-        chdir: "{{ drupalroot }}/../"
+    # - name: Backup drupal core directory
+    #   shell: 
+    #     cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz drupal
+    #     chdir: "{{ drupalroot }}/../"
+
+    - name: sanitized the old git repo
+      file:
+        path: "{{ gitroot }}"
+        state: absent
 
     - name: Download the deployment script.
-      get_url:
-        url: "{{ scriturl }}"
-        dest: "{{ workdir }}"
+      git:
+        repo: "{{ giturl }}"
+        dest: "{{ gitroot }}"
+        version: work
+
+    - name: make script executable
+      file:
+        path: "{{ workdir }}/{{ release }}"
         mode: 0755
-      
+
     - name: execute the script
-      command: sh "{{ release }}"
-      args:
-        chdir: "{{ workdir }}"
+      command: sh "{{ script }}"
+      register: script-out
+
+    - name: Print console out
+      debug:
+        msg: "{{ script-out.stdout }}"
+
 
     - name: Find type  directory in {{ site }} and change permissions to 755
       shell:
@@ -56,5 +72,10 @@
       shell:
         cmd: drush cc all
         chdir: "{{ siteroot }}"
+
+    - name: sanitized the old git repo
+      file:
+        path: "{{ gitroot }}"
+        state: absent
 
 
