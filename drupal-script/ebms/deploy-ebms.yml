@@ -38,6 +38,11 @@
         path: "{{ gitroot }}"
         state: absent
 
+    - name: remove any file or directory related to previous deployment
+      file:
+        path: "/tmp/{{ site }}*"
+        state: absent
+
     - name: Download the deployment script.
       git:
         repo: "{{ giturl }}"
@@ -54,8 +59,7 @@
       register: script-out
 
     - name: Print console out
-      debug:
-        msg: "{{ script-out.stdout }}"
+      debug: msg="{{ script-out.stdout }}"
 
 
     - name: Find type  directory in {{ site }} and change permissions to 755
