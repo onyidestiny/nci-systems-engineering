@@ -33,7 +33,7 @@
 
     - name: Download the deployment script.
       get_url:
-        uri: "{{ scriturl }}"
+        url: "{{ scriturl }}"
         dest: "{{ workdir }}"
         mode: 0755
       
