@@ -32,17 +32,13 @@
         chdir: "{{ drupalroot }}/../"
 
     - name: Download the deployment script.
-      command: wget {{ scriturl }}
-      args:
-        chdir: "{{ workdir }}"
-
-    - name: make script executable
-      file:
-        path: "{{ workdir }}/{{ release }}"
+      get_url:
+        uri: "{{ scriturl }}"
+        dest: "{{ workdir }}"
         mode: 0755
-
+      
     - name: execute the script
-      script: "{{ release }}"
+      command: sh "{{ release }}"
       args:
         chdir: "{{ workdir }}"
 
