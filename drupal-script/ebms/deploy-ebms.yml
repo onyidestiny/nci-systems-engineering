@@ -46,7 +46,7 @@
 
     - name: make script executable
       file:
-        path: "{{ workdir }}/{{ release }}"
+        path: "{{ script }}"
         mode: 0755
 
     - name: execute the script
