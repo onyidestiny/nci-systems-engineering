@@ -54,13 +54,13 @@
 
      - name: rsync the sites directory
        shell:
-         cmd: rsync -rvcCi --exclude=settings.php --exclude=files --exclude=.htaccess  {{ gitroot }}/smokefree/ {{ drupalroot }}/
+         cmd: rsync  -rvcCi  --delete --exclude=settings.php --exclude=files --exclude=.htaccess  {{ gitroot }}/smokefree/ {{ drupalroot }}/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
      - name: rsync the files directory just in case files are uploaded
        shell:
-         cmd: rsync -rvcCi  {{ files }}/  {{ siteroot }}/files/
+         cmd: rsync -rvcCi --delete  {{ files }}/  {{ siteroot }}/files/
        register: rsyncout
      - debug: msg={{ rsyncout }}
 
