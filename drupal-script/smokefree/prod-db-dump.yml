@@ -5,7 +5,7 @@
    become_user: root
    become_method: dzdo 
    vars:
-     - sfgroot: /local/drupal/smokefree/sites/smokefree.gov
+     - sfgroot: /local/drupal/smokefree/sites/default
      - prodsqldump: /admfs/drupal-bkups/nciws-p652-v
      - prodtables: actiondeck,field_data_field_springboard_action_cards,field_revision_field_springboard_action_cards,webform_submissions,webform_submitted_data,users,users_roles,authmap
      - prodfile:  exportdb-eight.sql

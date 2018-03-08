@@ -5,7 +5,7 @@
    become_user: drupal
    become_method: dzdo 
    vars:
-     - sfgroot: /local/drupal/smokefree/sites/smokefree.gov
+     - sfgroot: /local/drupal/smokefree/sites/default
      - proddump: /admfs/drupal_deployment/smokefree
      - prodsqlfile:  smokefree-prod-db.sql
      - drupalroot: /local/drupal/smokefree
