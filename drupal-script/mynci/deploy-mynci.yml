@@ -90,8 +90,6 @@
          cmd: find . -type f -print0 | xargs -0 chmod 644
          chdir: "{{ siteroot }}"
 
-     - name: Ensure varnish is restarted
-       service: name=varnish state=restarted
          
      - name: Clear drush cache
        shell:
