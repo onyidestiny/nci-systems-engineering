@@ -30,6 +30,10 @@
 
 
    tasks:
+
+     - name: Find all the files in backups directory that are older than 30 days and delete them
+       command: find /local/drupal/backups -mindepth 1 -mtime +30 -exec rm -rf {} \;
+
      - name: Take sql dump of {{ tier }} database.
        shell: 
          cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}"
