@@ -6,13 +6,13 @@
    become_method: dzdo 
    vars:
      - site: springboard
-     - siteroot: /local/drupal/{{ site }}/sites/{{ site }}
+     - siteroot: /local/drupal/{{ site }}/sites/default
      - dblocation: /admfs/drupal_deployment/{{ site }}
      - prodsqlfile:  "{{ site }}-prod-db.sql"
      - drupalroot: /local/drupal/{{ site }}
 
    tasks:
-     - name: Take sql dump of {{ site }}production.
+     - name: Take sql dump of {{ site }} production.
        shell: 
          cmd: drush sql-dump --result-file={{ dblocation }}/{{ prodsqlfile }}
          chdir: "{{ siteroot }}"
