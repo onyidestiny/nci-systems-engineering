@@ -1,0 +1,17 @@
+sitename: '{{ sitename }}'
+drupaluser: drupal
+dbfile: "{{ sitename }}-{{ tier }}-db"
+drupalroot: /local/drupal/{{ sitename }}
+siteroot: "{{ drupalroot }}/sites/ebms.nci.nih.gov"
+backups: /local/backups
+dbbackupfile: "{{ sitename }}-db"
+date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+sitecopy: "{{ sitename }}-{{ tier }}-copy"
+backup_directory: /admfs/drupal_deployment/{{ sitename }}
+backup_file: "refresh-{{ sitename }}.tgz"
+backup_dbfile: "refresh-{{ sitename }}-db.sql"
+tier: '{{ tier }}'
+ftier: '{{ ftier }}'
+refresh: '{{ refresh }}'
+thost: '{{ thost }}'
+fhost: '{{ fhost }}'
