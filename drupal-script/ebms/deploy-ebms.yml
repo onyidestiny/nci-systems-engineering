@@ -23,15 +23,15 @@
   
   tasks:
 
-    - name: Take sql dump of {{ tier }} database.
-      shell: 
-        cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
-        chdir: "{{ siteroot }}"
+    # - name: Take sql dump of {{ tier }} database.
+    #   shell: 
+    #     cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+    #     chdir: "{{ siteroot }}"
 
-    - name: Backup drupal core directory
-      shell: 
-        cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz drupal
-        chdir: "{{ drupalroot }}/../"
+    # - name: Backup drupal core directory
+    #   shell: 
+    #     cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz drupal
+    #     chdir: "{{ drupalroot }}/../"
 
     - name: sanitized the old git repo
       file:
