@@ -19,7 +19,7 @@
 
    tasks:
      - name: List name of directories in {{ sites_root }}
-       shell: find . -type d -maxdepth 1 | cut -d'/' -f2 | grep -v 'all$' | grep -v 'default$' | grep -v '\.$'
+       shell: find . -type d -maxdepth 1 | cut -d'/' -f2 | egrep -v 'all|all(?_HC|p621)$' | egrep -v 'accrualnet.cancer.gov_(HC|p621)$' |grep -v 'default$' | grep -v '\.$'
        args:
          chdir: "{{ sites_root }}"
        register: find_out
