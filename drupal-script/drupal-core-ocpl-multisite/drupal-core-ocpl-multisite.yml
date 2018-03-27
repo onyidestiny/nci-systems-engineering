@@ -1,0 +1,136 @@
+---
+ - name: Drupal Core Update to {{ drupal_version }}
+   hosts: '{{ host }}'
+   become: yes
+   become_user: root
+   become_method: dzdo
+   vars:
+
+     - tier: '{{ tier }}'
+     - site: '{{ site }}'
+     - drupal_version: '{{ drupal_version }}'
+     - drupalroot: /local/drupal/{{ site }}
+     - dbfile: "{{ item }}-{{ tier }}-db"
+     - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+     - sitecopy: "drupal-core-site-{{ tier }}-copy"
+     - backups: /local/drupal/backups
+     - drupaluser: drupal
+     - sites_root: /local/drupal/{{ site }}/sites
+
+   tasks:
+     - name: List name of directories in {{ sites_root }}
+       shell: find . -type d -maxdepth 1 | cut -d'/' -f2 | grep -v 'all$' | grep -v 'default$' | grep -v '\.$'
+       args:
+         chdir: "{{ sites_root }}"
+       register: find_out
+
+
+     - name: Take sql dump of {{ tier }} database.
+       shell: 
+         cmd: "drush sql-dump --gzip --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+         chdir: "{{ sites_root }}/{{ item }}"
+       with_items: 
+         - "{{ find_out.stdout_lines }}"
+
+     - name: Backup drupal root  directory
+       shell: 
+         cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ drupalroot }}
+         
+
+     - name: Copy .htaccess file to /tmp
+       shell: 
+         cmd: cp -p .htaccess /tmp/htaccess-preserve-{{ drupal_version }}
+         chdir: "{{ drupalroot }}"
+
+     - name: Copy robots.txt to /tmp
+       shell: 
+         cmd: cp -p robots.txt /tmp/robots-preserve-{{ drupal_version }}
+         chdir: "{{ drupalroot }}"
+       
+     - name: Put the sites into maintenance mode
+       shell: 
+         cmd: drush @sites vset --exact maintenance_mode 1 -y
+         chdir: "{{ sites_root }}"
+       
+       register: maint_mode
+
+     - debug: msg={{ maint_mode }}
+       
+     - name: Clear drush cache
+       shell:
+         cmd: drush @sites cc all -y
+         chdir: "{{ sites_root }}"
+       
+       register: clear_cache
+     - debug: msg={{ clear_cache }}
+
+     - name: Update the drupal core
+       shell: 
+         cmd: drush @sites pm-update drupal-{{ drupal_version }} -y --verbose --no-backup
+         chdir: "{{ sites_root }}"
+       ignore_errors: yes
+       
+       register: drupalupdate
+
+     - debug: msg={{ drupalupdate }}
+
+     - name: Restore .htaccess file from /tmp
+       shell: 
+         cmd: cp -p /tmp/htaccess-preserve-{{ drupal_version }} .htaccess
+         chdir: "{{ drupalroot }}"
+
+     - name: Restore robots.txt file from /tmp
+       shell: 
+         cmd: cp -p  /tmp/robots-preserve-{{ drupal_version }} robots.txt
+         chdir: "{{ drupalroot }}"
+
+     - name: Change ownership of {{ site }} site.
+       file:
+         owner: "{{ drupaluser }}"
+         group: "{{ drupaluser }}"
+         path: "{{ drupalroot }}"
+         recurse: yes
+
+     - name: Remove install.php file
+       file: 
+         path: "{{ drupalroot }}/install.php"
+         state: absent
+     
+     - name: Modify drupal root permissions
+       shell: 
+         cmd: chmod -R a+r *
+         chdir: "{{ drupalroot }}"
+
+     
+     - name: Update the drupal drupal database
+       shell: 
+         cmd: drush @sites updatedb -y
+         chdir: "{{ sites_root }}"
+       
+       register: dbupdate
+     - debug: msg={{ dbupdate }}
+
+
+     - name: Take the site  out of maintenance mode
+       shell: 
+         cmd: drush @sites vset --exact maintenance_mode 0 -y
+         chdir: "{{ sites_root }}"
+
+       register: maint_mode
+     - debug: msg={{ maint_mode }}
+
+     - name: Clear drush cache
+       shell:
+         cmd: drush @sites cc all -y
+         chdir: "{{ sites_root }}"
+       
+       register: clear_cache
+     - debug: msg={{ clear_cache }}
+
+     - name: Verify Drush version
+       shell:
+         cmd: drush status | grep 'Drupal version'
+         chdir: "{{ sites_root }}"
+       register: ver
+     - debug: msg={{ ver.stdout }}
+
