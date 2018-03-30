@@ -1,0 +1,13 @@
+---
+# tasks file for refresh-db-files
+- include_vars: ../../vars.yml
+
+- name: Taking database dump of {{ sitename }} on {{ fhost }}
+  shell: drush sql-dump --result-file={{ backup_directory }}/{{ backup_dbfile }}
+  args: 
+    chdir: "{{ siteroot }}"
+
+- name: Taking archive copy of {{ sitename }} on {{ fhost }}
+  command: tar --exclude=settings.php -czvf {{ backup_directory }}/{{ backup_file }}  {{ sitename }}
+  args: 
+    chdir : "{{ drupalroot }}/../"

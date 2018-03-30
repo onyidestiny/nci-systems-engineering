@@ -1,7 +1,7 @@
 sitename: '{{ sitename }}'
 drupaluser: drupal
 dbfile: "{{ sitename }}-{{ tier }}-db"
-drupalroot: /local/drupal/{{ sitename }}
+drupalroot: /local/drupal
 siteroot: "{{ drupalroot }}/sites/ebms.nci.nih.gov"
 backups: /local/backups
 dbbackupfile: "{{ sitename }}-db"

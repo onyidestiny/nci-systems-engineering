@@ -1,0 +1,44 @@
+---
+# tasks file for full-backup
+- include_vars: ../../vars.yml
+
+- name: Take sql dump of {{ tier }} database on {{ thost }}
+  shell: 
+    cmd: "drush sql-dump --result-file={{ backups }}/{{ dbfile }}-{{ date }}.sql"
+    chdir: "{{ siteroot }}"
+  register: dump
+- debug: msg={{ dump }}
+
+- name: Backup drupal core directory on {{ thost }}
+  archive:
+    path: "{{ drupalroot }}"
+    dest: "{{ backups }}/{{ sitecopy }}-{{ date }}.tgz"
+
+
+- name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
+  unarchive:
+    src: "{{ backup_directory }}/{{ backup_file }}"
+    dest: "{{ drupalroot }}/../"
+    remote_src: yes
+  register: extract
+
+- debug: msg={{ extract }}
+
+- name: Drop {{ sitename }} {{ tier }} database on {{ thost }}
+  shell: 
+    cmd: cd {{ siteroot }} && drush sql-drop -y
+  register: drop
+- debug: msg={{ drop }}
+
+- name: Import {{ sitename }} {{ fhost }} database to {{ tier }}
+  shell: 
+    cmd: cd {{ siteroot }} && drush sql-cli < {{ backup_directory }}/{{ backup_dbfile }}
+  register: import
+- debug: msg={{ import }}
+
+- name: Clear drush cache
+  shell:
+    cmd: drush cc all
+    chdir: "{{ siteroot }}"
+  register: clear
+- debug: msg={{ clear }}
