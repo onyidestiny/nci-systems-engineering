@@ -1,0 +1,9 @@
+---
+# tasks file for refresh-db
+
+- include_vars: ../../vars.yml
+
+- name: Taking database dump of {{ sitename }} {{ tier }}
+  shell: drush sql-dump --result-file={{ backup_directory }}/{{ backup_dbfile }}
+  args: 
+    chdir: "{{ siteroot }}"
