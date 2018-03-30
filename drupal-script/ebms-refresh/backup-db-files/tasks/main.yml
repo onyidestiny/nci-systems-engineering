@@ -8,6 +8,6 @@
     chdir: "{{ siteroot }}"
 
 - name: Taking archive copy of {{ sitename }} on {{ fhost }}
-  command: tar --exclude=settings.php -czvf {{ backup_directory }}/{{ backup_file }}  {{ sitename }}
+  command: tar --exclude=settings.php -czvf {{ backup_directory }}/{{ backup_file }} drupal
   args: 
     chdir : "{{ drupalroot }}/../"
