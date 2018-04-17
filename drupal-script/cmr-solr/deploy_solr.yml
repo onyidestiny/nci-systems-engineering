@@ -1,0 +1,374 @@
+---
+# This yaml file is for solr server on Tomcat for Drupal deployment
+# Coded by Robert Zhang
+- name: cmr solr deployment
+  hosts: '{{ host }}'
+#  hosts: all
+  become: yes
+  become_user: root
+  become_method: dzdo
+
+  vars:
+    - hosts: "{{ hosts }}"
+    - site: solr
+    - tier: "{{ tier }}"
+    - siteroot: /usr/local/{{ site }}
+    - tomcatversion: 7
+    - tomcatroot: /usr/local/tomcat{{ tomcatversion }}
+    - deploy_branch: '{{ deploy_branch }}'
+    - coreName: CmrMica
+    - javahome: /usr/local/jdk1.{{ tomcatversion }}
+    - local_path: "{{ local_path }}"
+    - local_host: 127.0.0.1
+  
+  tasks:
+
+    - name: Install Tomcat
+      yum:
+        name: cbiit-tomcat{{ tomcatversion }}
+        state: installed
+
+    - name: Install JDK 1.8
+      yum:
+        name: cbiit-jdk1.8
+        state: installed
+      when: tomcatversion == "8"
+
+    - name: Create a User Group for tomcat
+      group:
+        gid: 91
+        name: tomcat
+
+    - name: Create a user tomcat
+      user:
+        name: tomcat
+        uid: 91
+        group: tomcat
+
+    - name: Create symbolic link for tomcat conf
+      file:
+        src: "{{ tomcatroot }}/container-template/conf"
+        dest: "{{ tomcatroot }}/conf"
+        state: link
+
+    - name: Check tomact user file
+      stat:
+        path: "{{ tomcatroot }}/conf/tomcat-users.xml.org"
+      register: tom_usr
+
+    - name: Rename the tomcat-users.xml
+      command: mv "{{ tomcatroot }}/conf/tomcat-users.xml" "{{ tomcatroot }}/conf/tomcat-users.xml.org"
+      when: not tom_usr.stat.exists
+
+    - name: Check setenv file
+      stat:
+        path: "{{ tomcatroot }}/bin/setenv.sh"
+      register: env_file
+
+    - name: Touch setenv and tomcat users file
+      file:
+        path: "{{ tomcatroot }}/bin/setenv.sh"
+        state: touch
+        mode: 0755
+      with_items:
+        - "{{ tomcatroot }}/bin/setenv.sh"
+        - "{{ tomcatroot }}/conf/tomcat-users.xml"
+
+    - name: Create setenv.sh
+      copy:
+        dest: "{{ tomcatroot }}/bin/setenv.sh"
+        content: |
+          CATALINA_HOME={{ tomcatroot }}
+          JAVA_HOME={{ javahome }}
+      when: not env_file.stat.exists
+
+    - name: Create a new tomcat-users.xml
+      copy:
+        dest: "{{ tomcatroot }}/conf/tomcat-users.xml"
+        content: |
+          <?xml version='1.0' encoding='utf-8'?>
+          <tomcat-users>
+          <role rolename="manager-gui"/>
+          <user username="tomcat" password="tomcat" roles="manager-gui"/>
+          <role rolename="manager"/>
+          <role rolename="admin"/>
+          <user username="admincmr" password="adminCmr12" roles="admin,manager,admin-gui,admin-script,manager-gui,manager-script,manager-jmx,manager-status"/>
+          </tomcat-users>
+      when: not tom_usr.stat.exists
+
+    - name: Modify the server.xml
+      replace:
+        path: "{{ tomcatroot }}/conf/server.xml"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+        backup: yes
+      with_items:
+        - {regexp: '#PREFIX#', replace: '8'}
+        - {regexp: '8080', replace: '8983'}
+        - {regexp: 'address="127.0.0.1" ', replace: ''}
+      notify: Restart Tomcat
+
+    - name: Check local zip file
+      stat:
+        path: "{{ local_path }}/solr-4.10.4.tgz"
+      become: false
+      delegate_to: "{{ local_host }}"
+      register: solr_tar_chk
+
+    - name: Download solr atr ball to local
+      become: false
+      local_action: get_url https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz dest="{{ local_path }}"
+      when: not solr_tar_chk.stat.exists
+
+    - name: Check Drupal Module zip file
+      stat:
+        path: "{{ local_path }}/apachesolr-7.x-1.9.tar.gz"
+      become: false
+      delegate_to: "{{ local_host }}"
+      register: drupal_module_chk
+
+    - name: Download Drupal module zip file
+      become: false
+      local_action: gte_trl https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz dest="{{ local_path }}"
+      when: not drupal_module_chk.stat.exists
+
+    - name: Check solr directory
+      stat:
+        path: "{{ siteroot }}"
+      register: solr
+
+    - name: Copy zip file then unarchive them to remote
+      unarchive:
+        dest: "{{ item.dest }}"
+        src: "{{ local_path }}/{{ item.src }}"
+        mode: 0644
+      with_items:
+        - {src: solr-4.10.4.tgz, dest: /usr/local}
+        - {src: apachesolr-7.x-1.9.tar.gz, dest: /root}
+      when: not solr.stat.exists
+
+    - name: Rename solr-4.10.4/ to solr/ 
+      command: mv "/usr/local/solr-4.10.4" "{{ siteroot }}" 
+      when: not solr.stat.exists
+
+    - name: Check Solr core
+      stat:
+        path: "{{ siteroot }}/{{ coreName }}"
+      register: solr_dir
+
+    - name: Create directory
+      file:
+        path: "{{ item }}"
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+        state: directory
+        mode: 0755
+      with_items:
+        - "{{ siteroot }}/data"
+        - "{{ siteroot }}/{{ coreName }}"
+      when: not solr_dir.stat.exists
+
+    - name: Create symbolic link
+      file:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        state: link
+      with_items:
+        - {src: "{{ siteroot }}/example/solr/collection1/conf", dest: "{{ siteroot }}/conf"}
+        - {src: "{{ siteroot }}/example/solr/collection1/conf", dest: "{{ siteroot }}/{{ coreName }}/conf"}
+
+    - name: Check solr war
+      stat:
+        path: "{{ siteroot }}/solr.war"
+      register: solr_war
+
+    - name: Copy solr war file
+      copy: 
+        remote_src: True
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - {src: "{{ siteroot }}/dist/solr-4.10.4.war", dest: "{{ siteroot }}/solr.war"}
+        - {src: "{{ siteroot }}/example/resources/log4j.properties", dest: "{{ tomcatroot }}/conf/log4j.properties"}
+      when: not solr_war.stat.exists
+
+    - name: Copy solr ext jar to tomcat lib
+      copy:
+        remote_src: yes
+        force: yes
+        src: "{{ siteroot }}/example/lib/ext/{{ item }}"
+        dest: "{{ tomcatroot }}/lib/{{ item }}"
+        mode: 0644
+      with_items:
+        - jcl-over-slf4j-1.7.6.jar
+        - jul-to-slf4j-1.7.6.jar
+        - log4j-1.2.17.jar
+        - slf4j-api-1.7.6.jar
+        - slf4j-log4j12-1.7.6.jar
+
+    - stat:
+        path: "{{ siteroot }}/conf/solrconfig.xml.org"
+      register: chk_solr_cfg
+
+    - name: Copy drupal module file
+      copy:
+        remote_src: yes
+        force: yes
+        src: "/root/apachesolr/solr-conf/solr-4.x/{{ item }}"
+        dest: "{{ siteroot }}/conf/{{ item }}"
+        mode: 0644
+      with_items:
+        - elevate.xml
+        - mapping-ISOLatin1Accent.txt
+        - protwords.txt
+        - schema_extra_fields.xml
+        - schema_extra_types.xml
+        - schema.xml
+        - solrconfig_extra.xml
+        - solrconfig.xml
+        - solrcore.properties
+        - stopwords.txt
+        - synonyms.txt
+      when: not chk_solr_cfg.stat.exists
+
+    - name: Check solr xml file of tomacat
+      stat:
+        path: "{{ tomcatroot }}/conf/Catalina/localhost/solr.xml"
+      register: tom_solr
+
+    - name: Create Catalona dir
+      command: mkdir -m 0755 -p "{{ tomcatroot }}/conf/Catalina/localhost"
+      when: not tom_solr.stat.exists
+
+    - name: Create a solr.xml for tomcat
+      file:
+        path: "{{ tomcatroot }}/conf/Catalina/localhost/solr.xml"
+        state: touch
+        mode: 0644
+      when: not tom_solr.stat.exists
+
+    - name: Write contents into solr.xml
+      copy:
+        dest: "{{ tomcatroot }}/conf/Catalina/localhost/solr.xml"
+        content: |
+          <?xml version="1.0" encoding="utf-8"?>
+          <Context docBase="{{ siteroot }}/solr.war" debug="0" crossContext="true">
+          <Environment name="solr/home" type="java.lang.String" value="{{ siteroot }}" override="true"/>
+          </Context>
+      when: not tom_solr.stat.exists
+
+    - name: Check solr xml for core
+      stat:
+        path: "{{ siteroot }}/solr.xml"
+      register: solr_solr
+
+    - name: Create a solr.xml for solr core
+      file:
+        path: "{{ siteroot }}/solr.xml"
+        state: touch
+        mode: 0644
+      when: not solr_solr.stat.exists
+
+    - name: Write contents into solr.xml for core
+      copy:
+        dest: "{{ siteroot }}/solr.xml"
+        content: |
+          <?xml version='1.0' encoding='UTF-8' ?>
+          <solr persistent="false">
+          <cores adminPath="/admin/cores">
+          <core name="{{ coreName }}" instanceDir="{{ coreName }}" />
+          </cores>
+          </solr>
+      when: not solr_solr.stat.exists
+
+    - name: Copy solrconfig.xml
+      copy:
+        remote_src: yes
+        src: "{{ siteroot }}/conf/solrconfig.xml"
+        dest: "{{ siteroot }}/conf/solrconfig.xml.org"
+        mode: 0644
+      when: not chk_solr_cfg.stat.exists
+
+    - name: Modify the solrconfig.xml
+      command: sed -i '/dataDir/a <dataDir>\${solr.data.dir:/usr/local/solr/data}</dataDir>' "{{ siteroot }}/conf/solrconfig.xml"
+      when: not chk_solr_cfg.stat.exists
+
+    - name: Change ownership of {{ site }} site
+      file:
+        owner: "tomcat"
+        group: "tomcat"
+        path: "{{ item }}"
+        recurse: yes
+        mode: u=rwX,g=rX,o=rX
+      with_items:
+        - "{{ tomcatroot }}"
+        - "{{ siteroot }}"
+
+    - name: Check tomcat exec
+      stat:
+        path: /etc/init.d/tomcat
+      register: tom_exe
+
+    - name: Create tomcat exec file
+      file:
+        path: /etc/init.d/tomcat
+        state: touch
+        mode: 0755
+      when: not tom_exe.stat.exists
+
+    - name: Write contents into tomcat
+      copy:
+        dest: /etc/init.d/tomcat
+        content: |
+          #!/bin/bash
+          # chkconfig: 2345 20 80
+          # Coded by Robert Zhang
+          . /etc/init.d/functions
+          tomBin=/usr/local/tomcat{{ tomcatversion }}/bin
+          function start() {
+           ${tomBin}/catalina.sh start
+          }
+          function stop() {
+           ${tomBin}/catalina.sh stop
+          }
+          case "$1" in
+           start)
+            start
+            ;;
+           stop)
+            stop
+            ;;
+           restart)
+            stop
+            start
+            ;;
+           status)
+            retStr=$(ps -ef|grep 'org.apache.catalina.startup.Bootstrap start' |grep -v 'grep')
+            if [[ ! "${retStr}" ]];then
+              echo -e "\nTomcat is stopped\n"
+            else
+              tt=( $(echo $retStr) )
+              echo -e "\nTomcat is running ....."
+              echo -e "\n\tWith pid = ${tt[1]}, Start at ${tt[6]} on ${tt[4]} by ${tt[0]}\n"
+            fi
+            ;;
+           *)
+            echo "Usage: $0 {start|stop|status|restart}"
+          esac
+          exit 0
+      when: not tom_exe.stat.exists
+
+    - name: Start the tomcat
+      service:
+        name: tomcat
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Tomcat
+      service:
+        name: tomcat
+        state: restarted
+ 
