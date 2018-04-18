@@ -119,7 +119,7 @@
       local_action:
         get_url:
           url: https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz
-          dest="{{ local_path }}"
+          dest: "{{ local_path }}"
       become: false
       when: not solr_tar_chk.stat.exists
 
@@ -134,7 +134,7 @@
       local_action:
         get_trl:
           url: https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz
-          dest="{{ local_path }}"
+          dest: "{{ local_path }}"
       become: false
       when: not drupal_module_chk.stat.exists
 
