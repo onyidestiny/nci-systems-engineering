@@ -2,8 +2,8 @@
 # This yaml file is for solr server on Tomcat for Drupal deployment
 # Coded by Robert Zhang
 - name: cmr solr deployment
-  hosts: '{{ host }}'
-#  hosts: all
+#  hosts: '{{ host }}'
+  hosts: all
   become: yes
   become_user: root
   become_method: dzdo
@@ -13,11 +13,11 @@
     - site: solr
     - tier: "{{ tier }}"
     - siteroot: /usr/local/{{ site }}
-    - tomcatversion: 7
-    - tomcatroot: /usr/local/tomcat{{ tomcatversion }}
+    - tomcatversion: "{{ tomcat_version }}"
+    - tomcatroot: "/usr/local/tomcat{{ tomcatversion }}"
     - deploy_branch: '{{ deploy_branch }}'
     - coreName: CmrMica
-    - javahome: /usr/local/jdk1.{{ tomcatversion }}
+    - javahome: "/usr/local/jdk1.{{ tomcatversion }}"
     - local_path: "{{ local_path }}"
     - local_host: 127.0.0.1
   
@@ -25,7 +25,7 @@
 
     - name: Install Tomcat
       yum:
-        name: cbiit-tomcat{{ tomcatversion }}
+        name: "cbiit-tomcat{{ tomcatversion }}"
         state: installed
 
     - name: Install JDK 1.8
