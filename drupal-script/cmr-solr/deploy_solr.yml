@@ -115,12 +115,12 @@
       delegate_to: "{{ local_host }}"
       register: solr_tar_chk
 
-    - name: Download solr tarr ball to local
-      local_action:
-        get_url:
-          url: https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz
-          dest: "{{ local_path }}"
-      become: false
+    - name: Download solr tar ball to local
+      local_action: get_url url=https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz dest="{{ local_path }}"
+#        get_url:
+#          url: https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz
+#          dest: "{{ local_path }}"
+#      become: false
       when: not solr_tar_chk.stat.exists
 
     - name: Check Drupal Module zip file
@@ -131,11 +131,11 @@
       register: drupal_module_chk
 
     - name: Download Drupal module zip file
-      local_action:
-        get_trl:
-          url: https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz
-          dest: "{{ local_path }}"
-      become: false
+      local_action: get_url url=https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz dest="{{ local_path }}"
+#        get_trl:
+#          url: https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz
+#          dest: "{{ local_path }}"
+#      become: false
       when: not drupal_module_chk.stat.exists
 
     - name: Check solr directory
