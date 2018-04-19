@@ -111,7 +111,8 @@
     - name: Check local zip file
       stat:
         path: "{{ local_path }}/solr-4.10.4.tgz"
-#      become: false
+      become: yes
+      become_user: jenkins
       delegate_to: "{{ local_host }}"
       register: solr_tar_chk
 
@@ -120,13 +121,15 @@
 #        get_url:
 #          url: https://archive.apache.org/dist/lucene/solr/4.10.4/solr-4.10.4.tgz
 #          dest: "{{ local_path }}"
-#      become: false
+      become: yes
+      become_user: jenkins
       when: not solr_tar_chk.stat.exists
 
     - name: Check Drupal Module zip file
       stat:
         path: "{{ local_path }}/apachesolr-7.x-1.9.tar.gz"
-#      become: false
+      become: yes
+      become_user: jenkins
       delegate_to: "{{ local_host }}"
       register: drupal_module_chk
 
@@ -135,7 +138,8 @@
 #        get_trl:
 #          url: https://ftp.drupal.org/files/projects/apachesolr-7.x-1.9.tar.gz
 #          dest: "{{ local_path }}"
-#      become: false
+      become: yes
+      become_user: jenkins
       when: not drupal_module_chk.stat.exists
 
     - name: Check solr directory
