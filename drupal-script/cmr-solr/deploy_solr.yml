@@ -111,7 +111,7 @@
     - name: Check local zip file
       stat:
         path: "{{ local_path }}/solr-4.10.4.tgz"
-      become: false
+#      become: false
       delegate_to: "{{ local_host }}"
       register: solr_tar_chk
 
@@ -126,7 +126,7 @@
     - name: Check Drupal Module zip file
       stat:
         path: "{{ local_path }}/apachesolr-7.x-1.9.tar.gz"
-      become: false
+#      become: false
       delegate_to: "{{ local_host }}"
       register: drupal_module_chk
 
