@@ -36,7 +36,7 @@
        shell: 
          cmd: cp -p .htaccess /tmp/htaccess-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
-       when: htaccess.stat.exists
+       #when: htaccess.stat.exists
 
      - name: Check robots.txt
        stat:
@@ -47,7 +47,7 @@
        shell: 
          cmd: cp -p robots.txt /tmp/robots-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
-       when: robots.stat.exists
+       #when: robots.stat.exists
 
      - name: Put the {{ site }} into maintenance mode
        shell: 
