@@ -85,12 +85,12 @@
          chdir: "{{ drupalroot }}"
 
      
-     - name: Update the drupal drupal database
-       shell: 
-         cmd: drush updatedb -y
-         chdir: "{{ siteroot }}"
-       register: dbupdate
-     - debug: msg={{ dbupdate }}
+     # - name: Update the drupal drupal database
+     #   shell: 
+     #     cmd: drush updatedb -y
+     #     chdir: "{{ siteroot }}"
+     #   register: dbupdate
+     # - debug: msg={{ dbupdate }}
 
      - name: Take the {{ site }} out of maintenance mode
        shell: 
