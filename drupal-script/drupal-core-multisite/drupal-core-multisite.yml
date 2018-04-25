@@ -7,14 +7,15 @@
    vars:
 
      - tier: '{{ tier }}'
+     - site: '{{ site }}'
      - drupal_version: '{{ drupal_version }}'
-     - drupalroot: /local/drupal/drupal
+     - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ item }}-{{ tier }}-db"
      - date: "{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
      - sitecopy: "drupal-core-site-{{ tier }}-copy"
      - backups: /local/drupal/backups
      - drupaluser: drupal
-     - sites_root: /local/drupal/drupal/sites
+     - sites_root: /local/drupal/{{ site }}/sites
 
    tasks:
      - name: List name of directories in {{ sites_root }}
@@ -65,7 +66,7 @@
 
      - name: Update the drupal core
        shell: 
-         cmd: drush @sites pm-update -y --no-backup
+         cmd: drush @sites up drupal-{{ drupal_version }} -y --verbose --no-backup
          chdir: "{{ sites_root }}"
        ignore_errors: yes
        
@@ -101,13 +102,13 @@
          chdir: "{{ drupalroot }}"
 
      
-     - name: Update the drupal drupal database
-       shell: 
-         cmd: drush @sites updatedb -y
-         chdir: "{{ sites_root }}"
+     # - name: Update the drupal drupal database
+     #   shell: 
+     #     cmd: drush @sites updatedb -y
+     #     chdir: "{{ sites_root }}"
        
-       register: dbupdate
-     - debug: msg={{ dbupdate }}
+     #   register: dbupdate
+     # - debug: msg={{ dbupdate }}
 
 
      - name: Take the site  out of maintenance mode

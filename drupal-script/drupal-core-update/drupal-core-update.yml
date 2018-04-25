@@ -79,8 +79,8 @@
          cmd: drush up drupal-{{ drupal_version }} -y --verbose --no-backup
          chdir: "{{ siteroot }}"
        when: site != "cmr"
-#       register: drupalupdate
-#     - debug: msg={{ drupalupdate }}
+       register: drupalupdate
+     - debug: msg={{ drupalupdate }}
 
      - name: Update the drupal core for cmr
        shell:
@@ -92,13 +92,13 @@
        shell: 
          cmd: cp -p /tmp/htaccess-preserve-{{ drupal_version }} .htaccess
          chdir: "{{ drupalroot }}"
-       when: htaccess.stat.exists
+       #when: htaccess.stat.exists
 
      - name: Restore robots.txt file from /tmp
        shell: 
          cmd: cp -p  /tmp/robots-preserve-{{ drupal_version }} robots.txt
          chdir: "{{ drupalroot }}"
-       when: robots.stat.exists
+       #when: robots.stat.exists
 
      - name: Change ownership of {{ site }} site.
        file:
