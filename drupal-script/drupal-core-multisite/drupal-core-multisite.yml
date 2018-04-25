@@ -7,7 +7,7 @@
    vars:
 
      - tier: '{{ tier }}'
-     - site: '{{ site }}'
+     - site: drupal
      - drupal_version: '{{ drupal_version }}'
      - drupalroot: /local/drupal/{{ site }}
      - dbfile: "{{ item }}-{{ tier }}-db"
