@@ -27,16 +27,27 @@
        shell: 
          cmd: tar -czvf {{ backups }}/{{ sitecopy }}-{{ date }}.tgz {{ drupalroot }}
          
+     - name: Check file .htaccess
+       stat:
+         path: "{{ siteroot }}/.htaccess"
+       register: htaccess
 
      - name: Copy .htaccess file to /tmp
        shell: 
          cmd: cp -p .htaccess /tmp/htaccess-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
+       when: htaccess.stat.exists
+
+     - name: Check robots.txt
+       stat:
+         path: "{{ siteroot }}/robots.txt"
+       register: robots
 
      - name: Copy robots.txt to /tmp
        shell: 
          cmd: cp -p robots.txt /tmp/robots-preserve-{{ drupal_version }}
          chdir: "{{ drupalroot }}"
+       when: robots.stat.exists
 
      - name: Put the {{ site }} into maintenance mode
        shell: 
@@ -45,27 +56,49 @@
        register: maint_mode
      - debug: msg={{ maint_mode }}
 
+     - name: Change password policy module file
+       shell:
+         cmd: sed -i 's/project = /;project = /;s/datestamp = /;datestamp = /' "{{ siteroot }}/../all/modules/contrib/password_policy/{{ item }}"
+       with_items:
+         - password_policy.info
+         - password_policy_test/password_policy_test.info
+       when: site == "cmr"
+
      - name: Clear drush cache
        shell:
          cmd: drush cc all
          chdir: "{{ siteroot }}"
   
-     - name: Update the drupal core
+#    - name: Refresh the Drupal
+#      shell:
+#        cmd: drush rf
+#      when: site == "cmr"
+
+     - name: Update the drupal core for non cmr
        shell: 
          cmd: drush pm-update drupal-{{ drupal_version }} -y --verbose --no-backup
          chdir: "{{ siteroot }}"
-       register: drupalupdate
-     - debug: msg={{ drupalupdate }}
+       when: site != "cmr"
+#       register: drupalupdate
+#     - debug: msg={{ drupalupdate }}
+
+     - name: Update the drupal core for cmr
+       shell:
+         cmd: drush pm-update drupal -y
+         chdir: "{{ siteroot }}"
+       when: site == "cmr"
 
      - name: Restore .htaccess file from /tmp
        shell: 
          cmd: cp -p /tmp/htaccess-preserve-{{ drupal_version }} .htaccess
          chdir: "{{ drupalroot }}"
+       when: htaccess.stat.exists
 
      - name: Restore robots.txt file from /tmp
        shell: 
          cmd: cp -p  /tmp/robots-preserve-{{ drupal_version }} robots.txt
          chdir: "{{ drupalroot }}"
+       when: robots.stat.exists
 
      - name: Change ownership of {{ site }} site.
        file:
