@@ -76,7 +76,7 @@
 
      - name: Update the drupal core for non cmr
        shell: 
-         cmd: drush pm-update drupal-{{ drupal_version }} -y --verbose --no-backup
+         cmd: drush up drupal-{{ drupal_version }} -y --verbose --no-backup
          chdir: "{{ siteroot }}"
        when: site != "cmr"
 #       register: drupalupdate
