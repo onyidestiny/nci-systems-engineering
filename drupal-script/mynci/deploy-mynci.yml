@@ -94,6 +94,9 @@
        shell:
          cmd: drush updatedb -y
          chdir: "{{ siteroot }}"
+       register: updatedb_out
+
+     - debug: msg={{ updatedb_out.stdout_lines }}
          
      - name: Clear drush cache
        shell:
