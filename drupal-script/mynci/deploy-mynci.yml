@@ -92,7 +92,7 @@
 
      - name: Clear drush cache
        shell:
-         cmd: drush updatedb
+         cmd: drush updatedb -y
          chdir: "{{ siteroot }}"
          
      - name: Clear drush cache
