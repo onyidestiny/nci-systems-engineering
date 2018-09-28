@@ -1,5 +1,7 @@
 - name: restore settings.php from backup
-  unarchive:
-    src: "{{ backups }}/settings.tgz"
-    dest: "{{ siteroot }}"
+    src: "{{ backups }}/settings.php"
+    dest: "{{ siteroot }}/settings.php"
+    owner: "{{ drupaluser }}"
+    group: "{{ drupaluser }}"
+    mode: 0644
     remote_src: yes

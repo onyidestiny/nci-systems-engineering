@@ -1,10 +1,11 @@
 
-- name: Backup drupal core directory on {{ tier }}
-  archive:
-    path: "{{ siteroot }}/settings.php"
-    dest: "{{backups}}/settings.tgz"
+- name: save settings.php
+    dest: "{{ backups }}/settings.php"
+    src: "{{ siteroot }}/settings.php"
     owner: "{{ drupaluser }}"
+    group: "{{ drupaluser }}"
     mode: 0644
+    remote_src: yes
 
 - name: remove the old drupalroot
   command: rm -rf {{ sitename }}
