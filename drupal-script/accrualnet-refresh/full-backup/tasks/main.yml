@@ -15,7 +15,7 @@
     dest: "{{ backups }}/{{ sitecopy }}-{{ date }}.tgz"
 
 - name: remove the old files and save settings.php
-  nclude_role:
+  include_role:
     name: remove-files
 
 - name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
@@ -26,7 +26,7 @@
   register: extract
 
 - name: restore settings.php file
-  nclude_role:
+  include_role:
     name: restore-settigs-file
 
 - debug: msg={{ extract }}
