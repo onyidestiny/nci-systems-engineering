@@ -1,7 +1,7 @@
 
 - name: save settings.php
-    dest: "{{ backups }}/settings.php"
     src: "{{ siteroot }}/settings.php"
+    dest: "{{ backups }}/settings.php"
     owner: "{{ drupaluser }}"
     group: "{{ drupaluser }}"
     mode: 0644
