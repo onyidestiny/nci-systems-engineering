@@ -1,7 +1,10 @@
-- name: save the old settings.php file
+
+- name: Backup drupal core directory on {{ tier }}
   archive:
     path: "{{ siteroot }}/settings.php"
     dest: "{{backups}}/settings.tgz"
+    owner: "{{ drupaluser }}"
+    mode: 0644
 
 - name: remove the old drupalroot
   command: rm -rf {{ sitename }}
