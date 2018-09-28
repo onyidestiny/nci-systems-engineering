@@ -21,7 +21,7 @@
 - name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
   unarchive:
     src: "{{ backup_directory }}/{{ backup_file }}"
-    dest: "{{ drupalroot }}/../"
+    dest: /local/drupal
     remote_src: yes
   register: extract
 
