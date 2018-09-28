@@ -1,4 +1,5 @@
 - name: restore settings.php from backup
+  copy:
     src: "{{ backups }}/settings.php"
     dest: "{{ siteroot }}/settings.php"
     owner: "{{ drupaluser }}"

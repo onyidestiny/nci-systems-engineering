@@ -1,5 +1,6 @@
 
 - name: save settings.php
+  copy:
     src: "{{ siteroot }}/settings.php"
     dest: "{{ backups }}/settings.php"
     owner: "{{ drupaluser }}"
