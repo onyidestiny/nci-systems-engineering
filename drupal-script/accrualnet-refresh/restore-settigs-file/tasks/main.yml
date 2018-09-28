@@ -1,5 +1,5 @@
 - name: restore settings.php from backup
   unarchive:
-    src: "{{ backups }}/settings.tgz"
+    src: "{{ backups }}/settings.php.tgz"
     dest: "{{ siteroot }}"
     remote_src: yes
