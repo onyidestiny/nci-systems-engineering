@@ -1,0 +1,9 @@
+- name: save the old settings.php file
+  archive:
+    path: "{{ siteroot }}/settings.php"
+    dest: "{{backups}}/settings.php.tgz"
+
+- name: remove the old drupalroot
+  command: rm -rf {{ sitename }}
+  args:
+    chdir: /local/drupal

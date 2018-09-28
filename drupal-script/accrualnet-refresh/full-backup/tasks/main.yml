@@ -14,6 +14,9 @@
     path: "{{ drupalroot }}"
     dest: "{{ backups }}/{{ sitecopy }}-{{ date }}.tgz"
 
+- name: remove the old files and save settings.php
+  nclude_role:
+    name: remove-files
 
 - name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
   unarchive:
@@ -21,6 +24,10 @@
     dest: "{{ drupalroot }}/../"
     remote_src: yes
   register: extract
+
+- name: restore settings.php file
+  nclude_role:
+    name: restore-settigs-file
 
 - debug: msg={{ extract }}
 
