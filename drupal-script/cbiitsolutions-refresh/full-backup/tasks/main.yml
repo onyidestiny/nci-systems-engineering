@@ -15,11 +15,17 @@
     dest: "{{ backups }}/{{ sitecopy }}-{{ date }}.tgz"
 
 
+# - name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
+#   unarchive:
+#     src: "{{ backup_directory }}/{{ backup_file }}"
+#     dest: "{{ drupalroot }}/../"
+#     remote_src: yes
+#   register: extract
+
 - name: Extract archive copy of {{ sitename }} from {{ fhost }} to {{ tier }}
-  unarchive:
-    src: "{{ backup_directory }}/{{ backup_file }}"
-    dest: "{{ drupalroot }}/../"
-    remote_src: yes
+  command: tar xf {{ backup_directory }}/{{ backup_file }}
+  args:
+    chdir: "{{ drupalroot }}/../"
   register: extract
 
 - debug: msg={{ extract }}
